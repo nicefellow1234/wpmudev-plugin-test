@@ -1,0 +1,83 @@
+# ------------------------------------------------------------
+# OS / System files
+# ------------------------------------------------------------
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Icon?
+desktop.ini
+
+# ------------------------------------------------------------
+# Node / Frontend builds
+# ------------------------------------------------------------
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-lock.yaml
+package-lock.json
+.cache/
+dist/
+coverage/
+build/*.map
+
+# ------------------------------------------------------------
+# PHP / Composer
+# ------------------------------------------------------------
+vendor/
+composer.lock
+composer.phar
+
+# Ignore composer installed binaries and test data
+vendor/**/tests/
+vendor/**/test/
+vendor/**/docs/
+vendor/**/examples/
+vendor/**/Examples/
+
+# ------------------------------------------------------------
+# WordPress specific
+# ------------------------------------------------------------
+wp-content/uploads/
+wp-content/upgrade/
+wp-content/cache/
+wp-content/debug.log
+
+# ------------------------------------------------------------
+# IDEs / Editors
+# ------------------------------------------------------------
+.idea/
+.vscode/
+*.sublime-project
+*.sublime-workspace
+*.swp
+*.bak
+
+# ------------------------------------------------------------
+# Build / Deployment
+# ------------------------------------------------------------
+/build/
+.grunt/
+.tmp/
+log/
+logs/
+*.log
+.env
+.env.*
+
+# ------------------------------------------------------------
+# Miscellaneous
+# ------------------------------------------------------------
+*.zip
+*.tar
+*.tar.gz
+*.7z
+*.tgz
+*.bak
+*.orig
+*.rej
+
+# ------------------------------------------------------------
+# Optional: Keep build output if you commit production assets
+# ------------------------------------------------------------
+#!build/
