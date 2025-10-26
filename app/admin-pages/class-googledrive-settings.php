@@ -17,6 +17,8 @@ namespace WPMUDEV\PluginTest\App\Admin_Pages;
 defined( 'WPINC' ) || die;
 
 use WPMUDEV\PluginTest\Base;
+use WPMUDEV\PluginTest\App\GoogleDrive\Credentials_Manager;
+use WPMUDEV\PluginTest\Endpoints\V1\Drive_API;
 
 class Google_Drive extends Base {
 	/**
@@ -41,13 +43,6 @@ class Google_Drive extends Base {
 	 * @var array
 	 */
 	private $creds = array();
-
-	/**
-	 * Option name for credentials (reusing the same as original auth).
-	 *
-	 * @var string
-	 */
-	private $option_name = 'wpmudev_plugin_tests_auth';
 
 	/**
 	 * Page Assets.
@@ -79,7 +74,7 @@ class Google_Drive extends Base {
 	 */
 	public function init() {
 		$this->page_title     = __( 'Google Drive Test', 'wpmudev-plugin-test' );
-		$this->creds          = get_option( $this->option_name, array() );
+		$this->creds          = Credentials_Manager::get();
 		$this->assets_version = ! empty( $this->script_data( 'version' ) ) ? $this->script_data( 'version' ) : WPMUDEV_PLUGINTEST_VERSION;
 		$this->unique_id      = "wpmudev_plugintest_drive_main_wrap-{$this->assets_version}";
 
@@ -90,17 +85,20 @@ class Google_Drive extends Base {
 	}
 
 	public function register_admin_page() {
-		$page = add_menu_page(
-			'Google Drive Test',
+		$parent_slug = defined( 'WPMUDEV_PLUGINTEST_MENU_SLUG' ) ? WPMUDEV_PLUGINTEST_MENU_SLUG : 'wpmudev_plugintest_drive';
+
+		$page = add_submenu_page(
+			$parent_slug,
 			$this->page_title,
+			__( 'Google Drive Settings', 'wpmudev-plugin-test' ),
 			'manage_options',
 			$this->page_slug,
-			array( $this, 'callback' ),
-			'dashicons-cloud',
-			7
+			array( $this, 'callback' )
 		);
 
-		add_action( 'load-' . $page, array( $this, 'prepare_assets' ) );
+		if ( $page ) {
+			add_action( 'load-' . $page, array( $this, 'prepare_assets' ) );
+		}
 	}
 
 	/**
@@ -131,7 +129,8 @@ class Google_Drive extends Base {
 				'react',
 				'wp-element',
 				'wp-i18n',
-				'wp-is-shallow-equal',
+				'wp-components',
+				'wp-api-fetch',
 				'wp-polyfill',
 			);
 
@@ -152,7 +151,9 @@ class Google_Drive extends Base {
 				'nonce'                => wp_create_nonce( 'wp_rest' ),
 				'authStatus'           => $this->get_auth_status(),
 				'redirectUri'          => home_url( '/wp-json/wpmudev/v1/drive/callback' ),
-				'hasCredentials'       => ! empty( $this->creds['client_id'] ) && ! empty( $this->creds['client_secret'] ),
+				'hasCredentials'       => Credentials_Manager::has_credentials(),
+				'maxUploadSize'        => wp_max_upload_size(),
+				'scopes'               => Drive_API::get_scopes_list(),
 			),
 		);
 	}

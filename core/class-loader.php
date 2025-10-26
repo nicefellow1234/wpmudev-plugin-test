@@ -92,7 +92,20 @@ final class Loader extends Base {
 	 * @return void
 	 */
 	private function init() {
-		App\Admin_Pages\Google_Drive::instance()->init();
-		Endpoints\V1\Drive_API::instance()->init();
+		$google_ready = Dependency_Guard::google_client_supported();
+		$google_error = Dependency_Guard::get_google_client_error();
+
+		$dashboard = App\Admin_Pages\Dashboard::instance();
+		$dashboard->set_google_status( $google_ready, $google_error );
+		$dashboard->init();
+
+		if ( $google_ready ) {
+			App\Admin_Pages\Google_Drive::instance()->init();
+			Endpoints\V1\Drive_API::instance()->init();
+		}
+
+		App\Admin_Pages\Posts_Maintenance::instance()->init();
+		App\Posts_Maintenance\Manager::instance()->init();
+		Endpoints\V1\Posts_Maintenance_API::instance()->init();
 	}
 }

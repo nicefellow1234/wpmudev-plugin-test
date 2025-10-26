@@ -7,8 +7,8 @@
     "test": "tests"
   },
   "scripts": {
-    "watch": "clear && webpack --watch --mode development",
-    "compile": "clear && webpack --progress --mode production",
+    "watch": "webpack --watch --mode development",
+    "compile": "webpack --progress --mode production",
     "translate": "npx wp i18n make-pot ./ languages/wpmudev-plugin-test.pot --exclude=builds/,node_modules/,src,builds --ignore-domain --allow-root",
     "build": "clear && grunt preBuildClean && npm run compile && npm run translate && grunt build:pro && grunt finish"
   },
@@ -48,6 +48,7 @@
     "postcss-loader": "^8.2.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
+    "sass": "^1.77.5",
     "sass-embedded": "^1.93.2",
     "sass-loader": "^13.3.3",
     "style-loader": "^3.3.1",

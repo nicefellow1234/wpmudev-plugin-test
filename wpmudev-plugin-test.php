@@ -5,7 +5,7 @@
  * Requires at least: 6.1
  * Requires PHP:      7.4
  * Version:           0.1.0
- * Author:            PLEASE ADD YOU FULL NAME HERE
+ * Author:            Umair Shah
  * License:           GPL-2.0-or-later
  * License URI:       https://www.gnu.org/licenses/gpl-2.0.html
  * Text Domain:       wpmudev-plugin-test
@@ -51,6 +51,16 @@ if ( ! defined( 'WPMUDEV_PLUGINTEST_ASSETS_URL' ) ) {
 // Shared UI Version.
 if ( ! defined( 'WPMUDEV_PLUGINTEST_SUI_VERSION' ) ) {
 	define( 'WPMUDEV_PLUGINTEST_SUI_VERSION', '2.12.23' );
+}
+
+// Parent menu slug for all plugin pages.
+if ( ! defined( 'WPMUDEV_PLUGINTEST_MENU_SLUG' ) ) {
+	define( 'WPMUDEV_PLUGINTEST_MENU_SLUG', 'wpmudev_plugintest_dashboard' );
+}
+
+if ( defined( 'WP_CLI' ) && WP_CLI ) {
+	require_once WPMUDEV_PLUGINTEST_DIR . 'app/cli/class-posts-maintenance-command.php';
+	\WP_CLI::add_command( 'wpmudev posts-maintenance', '\WPMUDEV\PluginTest\App\CLI\Posts_Maintenance_Command' );
 }
 
 

@@ -8,6 +8,26 @@ const defaultConfig = require("@wordpress/scripts/config/webpack.config");
 
 const isProd = process.env.NODE_ENV === "production";
 
+if ( ! process.env.SASS_SILENCE_DEPRECATIONS ) {
+  process.env.SASS_SILENCE_DEPRECATIONS = "legacy-js-api";
+}
+
+const resolveSassImplementation = () => {
+  const preferEmbedded = process.env.USE_SASS_EMBEDDED === "1";
+
+  if ( preferEmbedded ) {
+    try {
+      return require("sass-embedded");
+    } catch (error) {
+      console.warn("sass-embedded requested but not available, falling back to `sass`.");
+    }
+  }
+
+  return require("sass");
+};
+
+const sassImplementation = resolveSassImplementation();
+
 module.exports = {
   // Start from @wordpress/scripts defaults, then override
   ...defaultConfig,
@@ -15,7 +35,8 @@ module.exports = {
   mode: isProd ? "production" : "development",
 
   entry: {
-    drivetestpage: "./src/googledrive-page/main.jsx"
+    drivetestpage: "./src/googledrive-page/main.jsx",
+    postsmaintenance: "./src/posts-maintenance/main.jsx"
   },
 
   output: {
@@ -33,7 +54,9 @@ module.exports = {
   // Use WP-provided React via wp.element, etc.
   externals: {
     "@wordpress/element": ["wp", "element"],
-    "@wordpress/components": ["wp", "components"]
+    "@wordpress/components": ["wp", "components"],
+    "@wordpress/api-fetch": ["wp", "apiFetch"],
+    "@wordpress/i18n": ["wp", "i18n"]
   },
 
   module: {
@@ -61,13 +84,12 @@ module.exports = {
           {
             loader: "sass-loader",
             options: {
-              // Modern Sass engine to avoid "legacy-js-api" warning
-              implementation: require("sass-embedded"),
+              // Prefer Dart Sass embedded when available, fall back to pure JS build (fixes `sass --embedded is unavailable` on some setups)
+              implementation: sassImplementation,
               sassOptions: {
                 // Hide deprecation noise from dependencies (e.g., @import in shared-ui)
-                quietDeps: true
-                // On newer Sass you may silence specific deprecations:
-                // silenceDeprecations: ['legacy-js-api','import','global-builtin','color-functions'],
+                quietDeps: true,
+                silenceDeprecations: ["legacy-js-api"]
               }
             }
           }
