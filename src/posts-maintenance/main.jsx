@@ -1,9 +1,11 @@
 import {
-	createRoot, render,
+	createRoot,
+	render,
 	StrictMode,
 	useEffect,
 	useMemo,
 	useState,
+	useCallback,
 } from '@wordpress/element';
 import { __, sprintf } from '@wordpress/i18n';
 import apiFetch, { createNonceMiddleware } from '@wordpress/api-fetch';
@@ -82,6 +84,8 @@ const App = () => {
 		initialStatus.settings?.post_types || []
 	);
 	const [selectedTypes, setSelectedTypes] = useState( initialSelection );
+	const [cronEnabled, setCronEnabled] = useState( initialStatus.settings?.cron_enabled ?? true );
+	const [cronTime, setCronTime] = useState( initialStatus.settings?.cron_time ?? '00:00' );
 
 	const jobActive = job && [ 'pending', 'running' ].includes( job.status );
 	const percentComplete = useMemo( () => {
@@ -92,10 +96,10 @@ const App = () => {
 		return Math.min( 100, Math.round( ( job.processed / job.total ) * 100 ) );
 	}, [ job ] );
 
-	const showNotice = ( message, type = 'success' ) => {
+	const showNotice = useCallback( ( message, type = 'success' ) => {
 		setNotice( { message, type } );
 		setTimeout( () => setNotice( null ), 5000 );
-	};
+	}, [] );
 
 	const togglePostType = ( slug ) => {
 		setSelectedTypes( ( current ) => {
@@ -106,7 +110,15 @@ const App = () => {
 		} );
 	};
 
-	const fetchStatus = async ( silent = false ) => {
+	const handleCardToggle = ( slug ) => {
+		if ( jobActive ) {
+			return;
+		}
+
+		togglePostType( slug );
+	};
+
+const fetchStatus = useCallback( async ( silent = false ) => {
 		if ( ! silent ) {
 			setIsRefreshing( true );
 		}
@@ -133,16 +145,18 @@ const App = () => {
 		} finally {
 			setIsRefreshing( false );
 		}
-	};
+	}, [ showNotice ] );
 
 	useEffect( () => {
-		if ( jobActive ) {
-			const timer = setInterval( () => fetchStatus( true ), 5000 );
-			return () => clearInterval( timer );
-		}
+		fetchStatus( true );
+	}, [ fetchStatus ] );
 
-		return undefined;
-	}, [ jobActive ] );
+	useEffect( () => {
+		const interval = jobActive ? 4000 : 20000;
+		const timer = setInterval( () => fetchStatus( true ), interval );
+
+		return () => clearInterval( timer );
+	}, [ jobActive, fetchStatus ] );
 
 	const handleStart = async () => {
 		if ( ! selectedTypes.length ) {
@@ -205,16 +219,21 @@ const App = () => {
 	const postTypesLabel = selectedTypes.length
 		? selectedTypes.join( ', ' )
 		: __( 'No post types selected', 'wpmudev-plugin-test' );
-	const googleSettingsUrl = config.googleSettingsUrl || 'admin.php?page=wpmudev_plugintest_drive';
 	const jobStatusLabel = job?.status ? job.status : __( 'Idle', 'wpmudev-plugin-test' );
 	const jobHelper = job?.message || __( 'Ready for your next scan.', 'wpmudev-plugin-test' );
+	const progressBarClass = jobActive ? 'pm-progressbar pm-progressbar--animated' : 'pm-progressbar';
+	const cliCommand = selectedTypes.length
+		? `wp wpmudev posts-maintenance scan --post_types=${ selectedTypes.join( ',' ) }`
+		: 'wp wpmudev posts-maintenance scan --post_types=post,page';
 
 	return (
 		<div className="sui-wrap pm-wrap">
 			<div className="pm-hero">
 				<div className="pm-hero__content">
 					<p className="pm-hero__eyebrow">{ __( 'Automation Suite', 'wpmudev-plugin-test' ) }</p>
-					<h1>{ __( 'Posts Maintenance', 'wpmudev-plugin-test' ) }</h1>
+					<h1>
+						<span>{ __( 'Posts Maintenance', 'wpmudev-plugin-test' ) }</span>
+					</h1>
 					<p>
 						{ __( 'Run health scans over thousands of posts without leaving the page. Choose your targets, fire the scanner, and let our background worker update the `wpmudev_test_last_scan` meta for every entry.', 'wpmudev-plugin-test' ) }
 					</p>
@@ -225,26 +244,33 @@ const App = () => {
 					</div>
 				</div>
 				<div className="pm-hero__actions">
-					<Button
-						variant="primary"
-						onClick={ handleStart }
-						isBusy={ isStarting }
-						disabled={ isStarting || jobActive || ! selectedTypes.length }
-					>
-						{ jobActive ? __( 'Scan In Progress…', 'wpmudev-plugin-test' ) : __( 'Scan Posts Now', 'wpmudev-plugin-test' ) }
-					</Button>
-					<Button
-						variant="secondary"
-						onClick={ () => fetchStatus( false ) }
-						isBusy={ isRefreshing }
-					>
-						{ isRefreshing ? __( 'Refreshing…', 'wpmudev-plugin-test' ) : __( 'Refresh Status', 'wpmudev-plugin-test' ) }
-					</Button>
-					{ jobActive && (
-						<Button onClick={ handleCancel } variant="link">
-							{ __( 'Cancel Scan', 'wpmudev-plugin-test' ) }
+					<div className="pm-hero__actions-buttons">
+						<Button
+							className="pm-btn pm-btn--primary"
+							onClick={ handleStart }
+							isBusy={ isStarting }
+							disabled={ isStarting || jobActive || ! selectedTypes.length }
+						>
+							{ jobActive ? __( 'Scan In Progress…', 'wpmudev-plugin-test' ) : __( 'Scan Posts Now', 'wpmudev-plugin-test' ) }
 						</Button>
-					) }
+						<Button
+							className="pm-btn pm-btn--ghost"
+							onClick={ () => fetchStatus( false ) }
+							isBusy={ isRefreshing }
+						>
+							{ isRefreshing ? __( 'Syncing…', 'wpmudev-plugin-test' ) : __( 'Sync Status Now', 'wpmudev-plugin-test' ) }
+						</Button>
+						{ jobActive && (
+							<Button onClick={ handleCancel } className="pm-btn pm-btn--outline">
+								{ __( 'Cancel Scan', 'wpmudev-plugin-test' ) }
+							</Button>
+						) }
+					</div>
+					<p className="pm-hero__note">
+						{ jobActive
+							? __( 'Auto-refreshing every 4 seconds while the scan runs.', 'wpmudev-plugin-test' )
+							: __( 'Status refreshes automatically every few seconds.', 'wpmudev-plugin-test' ) }
+					</p>
 				</div>
 			</div>
 
@@ -271,23 +297,6 @@ const App = () => {
 				/>
 			</div>
 
-			<div className="pm-help-callout">
-				<div>
-					<strong>{ __( 'Need Google Drive credentials?', 'wpmudev-plugin-test' ) }</strong>
-					<p>
-						{ __( 'Head over to the Google Drive Test settings screen to store your OAuth Client ID/secret and authorize access. All Drive tools stay disabled until credentials are added.', 'wpmudev-plugin-test' ) }
-					</p>
-				</div>
-				<Button
-					variant="secondary"
-					href={ googleSettingsUrl }
-					target="_blank"
-					rel="noreferrer"
-				>
-					{ __( 'Open Google Drive Settings', 'wpmudev-plugin-test' ) }
-				</Button>
-			</div>
-
 			{ notice && (
 				<Notice status={ notice.type } isDismissible onRemove={ () => setNotice( null ) }>
 					{ notice.message }
@@ -299,42 +308,71 @@ const App = () => {
 					<h2 className="sui-box-title">{ __( 'Post Type Filters', 'wpmudev-plugin-test' ) }</h2>
 				</div>
 				<div className="sui-box-body">
-					<p className="sui-description">
-						{ __( 'Select the post types you would like to include in the next maintenance scan.', 'wpmudev-plugin-test' ) }
-					</p>
-					<div className="pm-post-type-grid">
-						{ availableTypes.map( ( type ) => (
-							<Card key={ type.slug }>
+				<p className="sui-description">
+					{ __( 'Select the post types you would like to include in the next maintenance scan.', 'wpmudev-plugin-test' ) }
+				</p>
+				<div className="pm-post-type-grid">
+					{ availableTypes.map( ( type ) => {
+						const isSelected = selectedTypes.includes( type.slug );
+
+						return (
+							<Card
+								key={ type.slug }
+								className={ `pm-type-card ${ isSelected ? 'pm-type-card--active' : '' }` }
+								onClick={ () => handleCardToggle( type.slug ) }
+								tabIndex={ jobActive ? -1 : 0 }
+								onKeyDown={ ( event ) => {
+									if ( jobActive ) {
+										return;
+									}
+
+									if ( event.key === 'Enter' || event.key === ' ' ) {
+										event.preventDefault();
+										handleCardToggle( type.slug );
+									}
+								} }
+							>
 								<CardBody>
-									<CheckboxControl
-										label={ type.label }
-										checked={ selectedTypes.includes( type.slug ) }
-										onChange={ () => togglePostType( type.slug ) }
-										disabled={ jobActive }
-									/>
+									<div className="pm-type-card__content">
+										<span className="pm-type-card__indicator" aria-hidden="true" />
+										<div className="pm-type-card__text">
+											<strong className="pm-type-card__label">{ type.label }</strong>
+											<span className="pm-type-card__slug">{ type.slug }</span>
+										</div>
+										<div className="pm-checkbox-hidden" onClick={ ( event ) => event.stopPropagation() }>
+											<CheckboxControl
+												label={ type.label }
+												checked={ isSelected }
+												onChange={ () => togglePostType( type.slug ) }
+												disabled={ jobActive }
+											/>
+										</div>
+									</div>
 								</CardBody>
 							</Card>
-						) ) }
-						{ ! availableTypes.length && (
-							<p>{ __( 'No public post types were found.', 'wpmudev-plugin-test' ) }</p>
-						) }
-					</div>
+						);
+					} ) }
+					{ ! availableTypes.length && (
+						<p>{ __( 'No public post types were found.', 'wpmudev-plugin-test' ) }</p>
+					) }
 				</div>
-				<div className="sui-box-footer">
+			</div>
+			<div className="sui-box-footer">
 					<div className="sui-actions-left">
 						<p className="sui-description">
 							{ __( 'Filters are saved automatically and reused by the daily cron task.', 'wpmudev-plugin-test' ) }
 						</p>
 					</div>
-					<div className="sui-actions-right">
-						<Button
-							variant="secondary"
-							onClick={ () => fetchStatus( false ) }
-							isBusy={ isRefreshing }
-						>
-							{ isRefreshing ? __( 'Refreshing…', 'wpmudev-plugin-test' ) : __( 'Sync Filters From Server', 'wpmudev-plugin-test' ) }
-						</Button>
-					</div>
+				<div className="sui-actions-right">
+					<Button
+						variant="secondary"
+						className="pm-btn pm-btn--ghost"
+						onClick={ () => fetchStatus( false ) }
+						isBusy={ isRefreshing }
+					>
+						{ isRefreshing ? __( 'Syncing…', 'wpmudev-plugin-test' ) : __( 'Sync Filters From Server', 'wpmudev-plugin-test' ) }
+					</Button>
+				</div>
 				</div>
 			</div>
 
@@ -353,7 +391,7 @@ const App = () => {
 					</div>
 					<ProgressBadge status={ job?.status } />
 				</div>
-				<ProgressBar value={ percentComplete } className="pm-progressbar" />
+				<ProgressBar value={ percentComplete } className={ progressBarClass } />
 				{ job?.message && <p className="pm-status-message">{ job.message }</p> }
 				<div className="pm-progress-panel__timeline">
 					<div className={ `timeline-step ${ job?.status ? 'active' : '' }` }>
@@ -409,7 +447,7 @@ const App = () => {
 					</div>
 					<div className="sui-box-body">
 						<p>{ __( 'Run the same maintenance routine directly from the terminal. Perfect for cron jobs or CI pipelines.', 'wpmudev-plugin-test' ) }</p>
-						<pre><code>wp wpmudev posts-maintenance scan --post_types=post,page</code></pre>
+					<pre><code>{ cliCommand }</code></pre>
 						<p className="sui-description">
 							{ __( 'Add `--allow-root` when running inside containers or root shells.', 'wpmudev-plugin-test' ) }
 						</p>

@@ -20,6 +20,13 @@
   h1 {
     margin: 8px 0 12px;
     font-size: 28px;
+
+    span {
+      display: inline-block;
+      background: linear-gradient(90deg, #ffffff, #dbeafe);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
   }
 
   p {
@@ -48,6 +55,52 @@
   flex-direction: column;
   gap: 8px;
   align-items: flex-start;
+
+  .pm-hero__actions-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+}
+
+.pm-hero__note {
+  margin: 6px 0 0;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.pm-btn {
+  border-radius: 999px;
+  padding: 10px 20px;
+  font-weight: 600;
+  border: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+  &.pm-btn--primary {
+    background: #fff;
+    color: #1d4ed8;
+    box-shadow: 0 8px 25px rgba(15, 23, 42, 0.2);
+  }
+
+  &.pm-btn--ghost {
+    background: rgba(255, 255, 255, 0.2);
+    color: #fff;
+    border: 1px solid rgba(255, 255, 255, 0.4);
+  }
+
+  &.pm-btn--outline {
+    background: transparent;
+    color: #fff;
+    border: 1px dashed rgba(255, 255, 255, 0.6);
+  }
+}
+
+.pm-btn:hover {
+  box-shadow: 0 12px 30px rgba(59, 130, 246, 0.35);
+  transform: translateY(-1px);
 }
 
 .pm-stat-grid {
@@ -161,6 +214,79 @@
   gap: 12px;
 }
 
+.pm-type-card {
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  background: #fff;
+  transition: border 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+  cursor: pointer;
+
+  &.pm-type-card--active {
+    border-color: #7c3aed;
+    box-shadow: 0 14px 35px rgba(80, 17, 204, 0.15);
+    transform: translateY(-2px);
+  }
+
+  .components-base-control {
+    margin: 0;
+  }
+}
+
+.pm-type-card__content {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.pm-type-card__indicator {
+  width: 36px;
+  height: 36px;
+  border-radius: 12px;
+  border: 1px solid #cbd5f5;
+  background: #f8fafc;
+}
+
+.pm-type-card--active .pm-type-card__indicator {
+  border-color: #7c3aed;
+  background: linear-gradient(135deg, #7c3aed, #4f46e5);
+}
+
+.pm-type-card__text {
+  flex: 1;
+}
+
+.pm-type-card__label {
+  font-size: 15px;
+  color: #111827;
+}
+
+.pm-type-card__slug {
+  display: block;
+  margin-top: 2px;
+  font-size: 12px;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.pm-checkbox-hidden {
+  position: relative;
+}
+
+.pm-checkbox-hidden .components-checkbox-control__input {
+  display: none;
+}
+
+.pm-checkbox-hidden .components-base-control__field {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
 .pm-status-message {
   color: #475569;
   margin-top: 8px;
@@ -207,10 +333,42 @@
 
 .pm-progressbar {
   margin: 18px 0;
+  width: 100%;
 
   .components-progress-bar__progress {
     background: linear-gradient(90deg, #1d4ed8, #7c3aed);
   }
+
+  &.pm-progressbar--animated .components-progress-bar__progress {
+    position: relative;
+    overflow: hidden;
+
+    &:before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(
+        120deg,
+        rgba(255, 255, 255, 0.15) 25%,
+        rgba(255, 255, 255, 0) 50%,
+        rgba(255, 255, 255, 0.15) 75%
+      );
+      animation: pm-progress-stripes 1.2s linear infinite;
+    }
+  }
+}
+
+.pm-progressbar.pm-progressbar--animated .components-progress-bar__progress:after {
+  display: none;
+}
+
+.pm-progressbar .components-progress-bar__track {
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.pm-progressbar .components-progress-bar__progress {
+  border-radius: 999px;
 }
 
 .pm-progress-panel__timeline {
@@ -257,6 +415,16 @@
   border-radius: 10px;
   overflow: auto;
   font-size: 13px;
+}
+
+@keyframes pm-progress-stripes {
+  from {
+    transform: translateX(-40%);
+  }
+
+  to {
+    transform: translateX(40%);
+  }
 }
 
 @media (max-width: 782px) {

@@ -37,8 +37,8 @@ class Manager extends Base {
 	 */
 	public function init() {
 		add_action( self::CRON_HOOK, array( $this, 'process_queue' ) );
-		add_action( self::DAILY_HOOK, array( $this, 'handle_daily_event' ) );
-		add_action( 'init', array( $this, 'maybe_schedule_daily' ) );
+    add_action( self::DAILY_HOOK, array( $this, 'handle_daily_event' ) );
+    add_action( 'init', array( $this, 'maybe_schedule_daily' ) );
 	}
 
 	/**
@@ -61,7 +61,10 @@ class Manager extends Base {
 			$filtered = $this->get_default_post_types();
 		}
 
-		$total = $this->count_posts( $filtered );
+		$total       = $this->count_posts( $filtered );
+		$settings    = $this->get_settings();
+		$cron_status = ! empty( $settings['cron_enabled'] );
+		$cron_time   = ! empty( $settings['cron_time'] ) ? $settings['cron_time'] : '00:00';
 
 		$message = __( 'Queued background scan…', 'wpmudev-plugin-test' );
 		$status  = $total ? 'pending' : 'completed';
@@ -86,7 +89,7 @@ class Manager extends Base {
 			$job['message']      = __( 'No content matches the selected post types yet.', 'wpmudev-plugin-test' );
 		}
 
-		$this->save_settings( $filtered );
+		$this->save_settings( $filtered, $cron_status, $cron_time );
 		$this->save_job( $job );
 
 		if ( $total > 0 ) {
@@ -250,8 +253,17 @@ class Manager extends Base {
 	 * Schedule the recurring daily event if needed.
 	 */
 	public function maybe_schedule_daily() {
+		$settings = $this->get_settings();
+
+		if ( empty( $settings['cron_enabled'] ) ) {
+			wp_clear_scheduled_hook( self::DAILY_HOOK );
+			return;
+		}
+
+		$timestamp = $this->next_cron_timestamp( $settings['cron_time'] );
+
 		if ( ! wp_next_scheduled( self::DAILY_HOOK ) ) {
-			wp_schedule_event( time() + HOUR_IN_SECONDS, 'daily', self::DAILY_HOOK );
+			wp_schedule_event( $timestamp, 'daily', self::DAILY_HOOK );
 		}
 	}
 
@@ -259,11 +271,15 @@ class Manager extends Base {
 	 * Triggered by WP-Cron daily schedule.
 	 */
 	public function handle_daily_event() {
+		$settings = $this->get_settings();
+		if ( empty( $settings['cron_enabled'] ) ) {
+			return;
+		}
+
 		if ( $this->is_job_active() ) {
 			return;
 		}
 
-		$settings   = $this->get_settings();
 		$post_types = ! empty( $settings['post_types'] ) ? $settings['post_types'] : $this->get_default_post_types();
 
 		$this->start_job( $post_types );
@@ -275,12 +291,15 @@ class Manager extends Base {
 	 * @return array
 	 */
 	public function get_settings(): array {
-		return get_option(
-			self::SETTINGS_OPTION,
-			array(
-				'post_types' => $this->get_default_post_types(),
-			)
+		$defaults = array(
+			'post_types'   => $this->get_default_post_types(),
+			'cron_enabled' => true,
+			'cron_time'    => '00:00',
 		);
+
+		$settings = get_option( self::SETTINGS_OPTION, array() );
+
+		return wp_parse_args( $settings, $defaults );
 	}
 
 	/**
@@ -288,14 +307,20 @@ class Manager extends Base {
 	 *
 	 * @param array $post_types Array of post type slugs.
 	 */
-	public function save_settings( array $post_types ) {
+	public function save_settings( array $post_types, bool $cron_enabled = true, string $cron_time = '00:00' ) {
+		$cron_time = $this->sanitize_time( $cron_time );
+
 		update_option(
 			self::SETTINGS_OPTION,
 			array(
-				'post_types' => $post_types,
+				'post_types'   => $post_types,
+				'cron_enabled' => $cron_enabled,
+				'cron_time'    => $cron_time,
 			),
 			false
 		);
+
+		$this->maybe_schedule_daily();
 	}
 
 	/**
@@ -378,6 +403,29 @@ class Manager extends Base {
 	 */
 	private function is_cron_disabled(): bool {
 		return ( defined( 'DISABLE_WP_CRON' ) && DISABLE_WP_CRON );
+	}
+
+	private function next_cron_timestamp( string $time ): int {
+		list( $hours, $minutes ) = array_map( 'intval', explode( ':', $time ) + array( 0, 0 ) );
+
+		$now      = current_time( 'timestamp' );
+		$next_run = mktime( $hours, $minutes, 0, date( 'n', $now ), date( 'j', $now ), date( 'Y', $now ) );
+
+		if ( $next_run <= $now ) {
+			$next_run = strtotime( '+1 day', $next_run );
+		}
+
+		return $next_run;
+	}
+
+	private function sanitize_time( string $time ): string {
+		if ( preg_match( '/^(\d{1,2}):(\d{2})$/', trim( $time ), $matches ) ) {
+			$hours   = str_pad( min( 23, (int) $matches[1] ), 2, '0', STR_PAD_LEFT );
+			$minutes = str_pad( min( 59, (int) $matches[2] ), 2, '0', STR_PAD_LEFT );
+			return $hours . ':' . $minutes;
+		}
+
+		return '00:00';
 	}
 
 	/**
