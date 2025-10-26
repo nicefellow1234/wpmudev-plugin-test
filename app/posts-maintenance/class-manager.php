@@ -24,6 +24,7 @@ class Manager extends Base {
 	const CRON_HOOK       = 'wpmudev_posts_maintenance_process';
 	const DAILY_HOOK      = 'wpmudev_posts_maintenance_daily';
 	const BATCH_SIZE      = 25;
+	const MAX_CRON_RUNS   = 6;
 
 	/**
 	 * Whether we are currently processing inline (synchronously).
@@ -31,14 +32,20 @@ class Manager extends Base {
 	 * @var bool
 	 */
 	private $inline_processing = false;
+	/**
+	 * Whether we've already registered the deferred inline runner.
+	 *
+	 * @var bool
+	 */
+	private $inline_runner_registered = false;
 
 	/**
 	 * Bootstraps hooks.
 	 */
 	public function init() {
 		add_action( self::CRON_HOOK, array( $this, 'process_queue' ) );
-    add_action( self::DAILY_HOOK, array( $this, 'handle_daily_event' ) );
-    add_action( 'init', array( $this, 'maybe_schedule_daily' ) );
+		add_action( self::DAILY_HOOK, array( $this, 'handle_daily_event' ), 10, 1 );
+		add_action( 'init', array( $this, 'maybe_schedule_daily' ) );
 	}
 
 	/**
@@ -61,12 +68,14 @@ class Manager extends Base {
 			$filtered = $this->get_default_post_types();
 		}
 
-		$total       = $this->count_posts( $filtered );
-		$settings    = $this->get_settings();
-		$cron_status = ! empty( $settings['cron_enabled'] );
-		$cron_time   = ! empty( $settings['cron_time'] ) ? $settings['cron_time'] : '00:00';
+		$total        = $this->count_posts( $filtered );
+		$settings     = $this->get_settings();
+		$cron_status  = ! empty( $settings['cron_enabled'] );
+		$cron_time    = ! empty( $settings['cron_time'] ) ? $settings['cron_time'] : '00:00';
+		$cron_times   = ! empty( $settings['cron_times'] ) ? (array) $settings['cron_times'] : array( $cron_time );
+		$prefer_async = $this->is_rest_request() && ! $this->is_cron_disabled();
 
-		$message = __( 'Queued background scan…', 'wpmudev-plugin-test' );
+		$message = __( 'Queued background scan...', 'wpmudev-plugin-test' );
 		$status  = $total ? 'pending' : 'completed';
 
 		$job = array(
@@ -75,6 +84,7 @@ class Manager extends Base {
 			'total'       => $total,
 			'processed'   => 0,
 			'status'      => $status,
+			'cancel_requested' => false,
 			'batch'       => array(
 				'page'      => 1,
 				'per_page'  => self::BATCH_SIZE,
@@ -89,14 +99,18 @@ class Manager extends Base {
 			$job['message']      = __( 'No content matches the selected post types yet.', 'wpmudev-plugin-test' );
 		}
 
-		$this->save_settings( $filtered, $cron_status, $cron_time );
+		$this->save_settings( $filtered, $cron_status, $cron_time, $cron_times );
 		$this->save_job( $job );
 
 		if ( $total > 0 ) {
-			if ( $this->should_process_inline_immediately() ) {
+			if ( $this->should_process_inline_immediately() && ! $prefer_async ) {
 				$this->run_inline_until_complete();
 			} else {
 				$this->queue_processing();
+
+				if ( $prefer_async ) {
+					$this->register_deferred_runner();
+				}
 			}
 		}
 
@@ -119,9 +133,17 @@ class Manager extends Base {
 			);
 		}
 
-		$job['status']       = 'cancelled';
-		$job['completed_at'] = time();
-		$job['message']      = __( 'Scan cancelled by user.', 'wpmudev-plugin-test' );
+		if ( ! empty( $job['status'] ) && in_array( $job['status'], array( 'completed', 'cancelled', 'failed' ), true ) ) {
+			return $job;
+		}
+
+		if ( ! empty( $job['cancel_requested'] ) ) {
+			return $job;
+		}
+
+		$job['cancel_requested'] = true;
+		$job['status']           = 'cancelling';
+		$job['message']          = __( 'Cancellation requested. Wrapping up the current batch...', 'wpmudev-plugin-test' );
 
 		$this->save_job( $job );
 
@@ -152,6 +174,11 @@ class Manager extends Base {
 			return;
 		}
 
+		if ( ! empty( $job['cancel_requested'] ) ) {
+			$this->finalize_cancellation( $job );
+			return;
+		}
+
 		$job['status']    = 'running';
 		$job['updated_at'] = time();
 
@@ -163,7 +190,19 @@ class Manager extends Base {
 			$job['processed'] ++;
 		}
 
+		$this->refresh_cancel_flag( $job, true );
+		if ( ! empty( $job['cancel_requested'] ) ) {
+			$this->finalize_cancellation( $job );
+			return;
+		}
+
 		if ( empty( $ids ) || $job['processed'] >= $job['total'] ) {
+			$this->refresh_cancel_flag( $job, true );
+			if ( ! empty( $job['cancel_requested'] ) ) {
+				$this->finalize_cancellation( $job );
+				return;
+			}
+
 			$job['status']       = 'completed';
 			$job['completed_at'] = time();
 			$job['message']      = __( 'Maintenance scan finished.', 'wpmudev-plugin-test' );
@@ -186,7 +225,7 @@ class Manager extends Base {
 		$job['batch']['page'] ++;
 		$job['message'] = sprintf(
 			/* translators: 1: processed posts, 2: total posts */
-			__( 'Processed %1$d of %2$d posts…', 'wpmudev-plugin-test' ),
+			__( 'Processed %1$d of %2$d posts...', 'wpmudev-plugin-test' ),
 			$job['processed'],
 			$job['total']
 		);
@@ -260,17 +299,13 @@ class Manager extends Base {
 			return;
 		}
 
-		$timestamp = $this->next_cron_timestamp( $settings['cron_time'] );
-
-		if ( ! wp_next_scheduled( self::DAILY_HOOK ) ) {
-			wp_schedule_event( $timestamp, 'daily', self::DAILY_HOOK );
-		}
+		$this->schedule_cron_slots( $settings['cron_times'] );
 	}
 
 	/**
 	 * Triggered by WP-Cron daily schedule.
 	 */
-	public function handle_daily_event() {
+	public function handle_daily_event( $args = array() ) {
 		$settings = $this->get_settings();
 		if ( empty( $settings['cron_enabled'] ) ) {
 			return;
@@ -295,20 +330,47 @@ class Manager extends Base {
 			'post_types'   => $this->get_default_post_types(),
 			'cron_enabled' => true,
 			'cron_time'    => '00:00',
+			'cron_times'   => array( '00:00' ),
 		);
 
-		$settings = get_option( self::SETTINGS_OPTION, array() );
+		$settings = wp_parse_args(
+			get_option( self::SETTINGS_OPTION, array() ),
+			$defaults
+		);
 
-		return wp_parse_args( $settings, $defaults );
+		$settings['cron_times'] = $this->sanitize_cron_times( (array) $settings['cron_times'] );
+
+		if ( empty( $settings['cron_times'] ) ) {
+			$settings['cron_times'] = array( $this->sanitize_time( $settings['cron_time'] ) );
+		}
+
+		$settings['cron_time'] = $settings['cron_times'][0];
+
+		return $settings;
 	}
 
 	/**
 	 * Persist preferred settings.
 	 *
-	 * @param array $post_types Array of post type slugs.
+	 * @param array  $post_types   Array of post type slugs.
+	 * @param bool   $cron_enabled Whether the daily cron job is enabled.
+	 * @param string $cron_time    Preferred run time in HH:MM.
 	 */
-	public function save_settings( array $post_types, bool $cron_enabled = true, string $cron_time = '00:00' ) {
+	public function save_settings( array $post_types, bool $cron_enabled = true, string $cron_time = '00:00', array $cron_times = null ) {
+		$post_types = $this->filter_allowed_post_types( $post_types );
+
+		if ( empty( $post_types ) ) {
+			$post_types = $this->get_default_post_types();
+		}
+
 		$cron_time = $this->sanitize_time( $cron_time );
+
+		if ( empty( $cron_times ) ) {
+			$cron_times = array( $cron_time );
+		}
+
+		$cron_times = $this->sanitize_cron_times( $cron_times );
+		$cron_time  = $cron_times[0];
 
 		update_option(
 			self::SETTINGS_OPTION,
@@ -316,11 +378,12 @@ class Manager extends Base {
 				'post_types'   => $post_types,
 				'cron_enabled' => $cron_enabled,
 				'cron_time'    => $cron_time,
+				'cron_times'   => $cron_times,
 			),
 			false
 		);
 
-		$this->maybe_schedule_daily();
+		$this->refresh_daily_schedule( $cron_enabled, $cron_times );
 	}
 
 	/**
@@ -338,7 +401,98 @@ class Manager extends Base {
 	 * @param array $job Job data.
 	 */
 	private function save_job( array $job ) {
+		if ( ! isset( $job['cancel_requested'] ) ) {
+			$job['cancel_requested'] = false;
+		}
+
 		update_option( self::JOB_OPTION, $job, false );
+	}
+
+	/**
+	 * Sync the cancel flag from the live option store.
+	 *
+	 * @param array $job          Current job data (passed by reference).
+	 * @param bool  $force_lookup Whether to fetch the latest option and merge the flag.
+	 *
+	 * @return void
+	 */
+	private function refresh_cancel_flag( array &$job, bool $force_lookup = false ) {
+		if ( ! empty( $job['cancel_requested'] ) ) {
+			return;
+		}
+
+		if ( ! $force_lookup ) {
+			return;
+		}
+
+		$current = $this->get_current_job();
+		if ( ! empty( $current['cancel_requested'] ) ) {
+			$job['cancel_requested'] = true;
+		}
+	}
+
+	/**
+	 * Remove current job state.
+	 *
+	 * @return void
+	 */
+	public function clear_job() {
+		delete_option( self::JOB_OPTION );
+	}
+
+	/**
+	 * Finalize a cancelled job state.
+	 *
+	 * @param array $job Job data.
+	 *
+	 * @return void
+	 */
+	private function finalize_cancellation( array $job ) {
+		$job['status']           = 'cancelled';
+		$job['cancel_requested'] = false;
+		$job['completed_at']     = time();
+		$job['message']          = __( 'Scan cancelled by user.', 'wpmudev-plugin-test' );
+
+		$this->save_job( $job );
+	}
+
+	/**
+	 * Ensure the daily cron event matches current preferences.
+	 *
+	 * @param bool  $cron_enabled Whether the daily job is enabled.
+	 * @param array $cron_times   List of HH:MM slots.
+	 *
+	 * @return void
+	 */
+	private function refresh_daily_schedule( bool $cron_enabled, array $cron_times ) {
+		wp_clear_scheduled_hook( self::DAILY_HOOK );
+
+		if ( empty( $cron_enabled ) ) {
+			return;
+		}
+
+		$this->schedule_cron_slots( $cron_times );
+	}
+
+	/**
+	 * Ensure cron events exist for the requested times.
+	 *
+	 * @param array $cron_times List of HH:MM strings.
+	 */
+	private function schedule_cron_slots( array $cron_times ) {
+		$cron_times = $this->sanitize_cron_times( $cron_times );
+
+		foreach ( $cron_times as $time ) {
+			$args = array( 'slot' => $time );
+
+			if ( wp_next_scheduled( self::DAILY_HOOK, $args ) ) {
+				continue;
+			}
+
+			$timestamp = $this->next_cron_timestamp( $time );
+
+			wp_schedule_event( $timestamp, 'daily', self::DAILY_HOOK, $args );
+		}
 	}
 
 	/**
@@ -368,8 +522,39 @@ class Manager extends Base {
 		}
 
 		if ( ! $spawned ) {
+			$spawned = $this->trigger_async_cron_request();
+		}
+
+		if ( ! $spawned ) {
 			$this->run_inline_until_complete();
 		}
+	}
+
+	/**
+	 * Register inline runner to execute after the HTTP response is flushed.
+	 *
+	 * @return void
+	 */
+	private function register_deferred_runner() {
+		if ( $this->inline_runner_registered ) {
+			return;
+		}
+
+		$this->inline_runner_registered = true;
+		add_action( 'shutdown', array( $this, 'finish_job_after_response' ), PHP_INT_MAX );
+	}
+
+	/**
+	 * Called on shutdown to process the queue after the response is sent.
+	 *
+	 * @return void
+	 */
+	public function finish_job_after_response() {
+		if ( function_exists( 'fastcgi_finish_request' ) ) {
+			@fastcgi_finish_request();
+		}
+
+		$this->run_inline_until_complete();
 	}
 
 	/**
@@ -394,6 +579,7 @@ class Manager extends Base {
 		}
 
 		$this->inline_processing = false;
+		$this->inline_runner_registered = false;
 	}
 
 	/**
@@ -429,16 +615,40 @@ class Manager extends Base {
 	}
 
 	/**
+	 * Normalize and limit cron run times.
+	 *
+	 * @param array $times Raw HH:MM values.
+	 *
+	 * @return array
+	 */
+	private function sanitize_cron_times( array $times ): array {
+		$normalized = array();
+
+		foreach ( $times as $time ) {
+			$normalized[] = $this->sanitize_time( (string) $time );
+		}
+
+		$normalized = array_values( array_unique( $normalized ) );
+		sort( $normalized );
+
+		if ( empty( $normalized ) ) {
+			$normalized = array( '00:00' );
+		}
+
+		if ( count( $normalized ) > self::MAX_CRON_RUNS ) {
+			$normalized = array_slice( $normalized, 0, self::MAX_CRON_RUNS );
+		}
+
+		return $normalized;
+	}
+
+	/**
 	 * Should we process the job inline immediately?
 	 *
 	 * @return bool
 	 */
 	private function should_process_inline_immediately(): bool {
 		if ( $this->is_cron_disabled() ) {
-			return true;
-		}
-
-		if ( defined( 'REST_REQUEST' ) && REST_REQUEST ) {
 			return true;
 		}
 
@@ -451,6 +661,43 @@ class Manager extends Base {
 		}
 
 		return false;
+	}
+
+	/**
+	 * Detect REST context.
+	 *
+	 * @return bool
+	 */
+	private function is_rest_request(): bool {
+		return ( defined( 'REST_REQUEST' ) && REST_REQUEST );
+	}
+
+	/**
+	 * Attempt to fire wp-cron.php asynchronously using HTTP request.
+	 *
+	 * @return bool
+	 */
+	private function trigger_async_cron_request(): bool {
+		if ( $this->is_cron_disabled() ) {
+			return false;
+		}
+
+		$url = add_query_arg(
+			'doing_wp_cron',
+			sprintf( '%.22F', microtime( true ) ),
+			site_url( 'wp-cron.php' )
+		);
+
+		$response = wp_remote_post(
+			$url,
+			array(
+				'timeout'   => 0.01,
+				'blocking'  => false,
+				'sslverify' => apply_filters( 'https_local_ssl_verify', false ),
+			)
+		);
+
+		return ! is_wp_error( $response );
 	}
 
 	/**
