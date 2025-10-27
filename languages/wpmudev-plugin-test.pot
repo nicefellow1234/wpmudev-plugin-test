@@ -1,4 +1,4 @@
-# Copyright (C) 2025 PLEASE ADD YOU FULL NAME HERE
+# Copyright (C) 2025 Umair Shah
 # This file is distributed under the GPL-2.0-or-later.
 msgid ""
 msgstr ""
@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2025-08-28T16:10:12+00:00\n"
+"POT-Creation-Date: 2025-10-27T21:39:22+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 
@@ -25,9 +25,1199 @@ msgstr ""
 
 #. Author of the plugin
 #: wpmudev-plugin-test.php
-msgid "PLEASE ADD YOU FULL NAME HERE"
+msgid "Umair Shah"
 msgstr ""
 
-#: app/admin-pages/class-googledrive-settings.php:81
+#: app/admin-pages/class-dashboard.php:47
+#: app/admin-pages/class-dashboard.php:48
+#: app/admin-pages/class-dashboard.php:109
+msgid "WPMU DEV Plugin Test"
+msgstr ""
+
+#: app/admin-pages/class-dashboard.php:58
+#: app/admin-pages/class-dashboard.php:59
+#: app/admin-pages/class-dashboard.php:108
+msgid "Overview"
+msgstr ""
+
+#: app/admin-pages/class-dashboard.php:100
+msgid "Google Drive compatibility override enabled. Proceed with caution."
+msgstr ""
+
+#: app/admin-pages/class-dashboard.php:101
+msgid "Google Drive compatibility override disabled. Compatibility checks are active again."
+msgstr ""
+
+#: app/admin-pages/class-dashboard.php:110
+msgid "Quick access to plugin tools, Google Drive integration, and your background automation workflow."
+msgstr ""
+
+#: app/admin-pages/class-dashboard.php:126
+msgid "Google Drive features are temporarily disabled because another plugin loaded an incompatible google/apiclient version. Update the conflicting plugin or remove its bundled Google Client library to re-enable Drive tools."
+msgstr ""
+
+#: app/admin-pages/class-dashboard.php:136
+#: app/admin-pages/class-googledrive-settings.php:93
+msgid "Google Drive Settings"
+msgstr ""
+
+#: app/admin-pages/class-dashboard.php:138
+#: assets/js/drivetestpage.min.js:2590
+msgid "Connected"
+msgstr ""
+
+#: app/admin-pages/class-dashboard.php:138
+msgid "Action needed"
+msgstr ""
+
+#. translators: %s - Google Console URL
+#: app/admin-pages/class-dashboard.php:145
+#, php-format
+msgid "Generate OAuth credentials inside the %s, paste them here, and authenticate to unlock Drive uploads and file browsing."
+msgstr ""
+
+#: app/admin-pages/class-dashboard.php:146
+msgid "Google Cloud Console"
+msgstr ""
+
+#: app/admin-pages/class-dashboard.php:152
+msgid "Open Google Drive Settings"
+msgstr ""
+
+#: app/admin-pages/class-dashboard.php:156
+msgid "Review Google Drive Setup"
+msgstr ""
+
+#: app/admin-pages/class-dashboard.php:159
+msgid "Resolve the dependency notice above to re-enable the Google Drive screen."
+msgstr ""
+
+#: app/admin-pages/class-dashboard.php:170
+msgid "Force-enable Google Drive even if another plugin bundles an older google/apiclient."
+msgstr ""
+
+#: app/admin-pages/class-dashboard.php:176
+msgid "Only use this override when you are aware of the risks. Leave it disabled to rely on automatic compatibility checks."
+msgstr ""
+
+#: app/admin-pages/class-dashboard.php:186
+msgid "Override is currently active. Google Drive tooling will load even if another plugin ships an outdated client."
+msgstr ""
+
+#: app/admin-pages/class-dashboard.php:195
+msgid "Save override preference"
+msgstr ""
+
+#: app/admin-pages/class-dashboard.php:202
+#: app/admin-pages/class-posts-maintenance.php:56
+#: app/admin-pages/class-posts-maintenance.php:57
+#: assets/js/postsmaintenance.min.js:1472
+msgid "Posts Maintenance"
+msgstr ""
+
+#: app/admin-pages/class-dashboard.php:203
+msgid "Automation"
+msgstr ""
+
+#: app/admin-pages/class-dashboard.php:206
+msgid "Scan all public posts/pages, refresh the last scan meta, and trigger the same job via WP-Cron or WP-CLI."
+msgstr ""
+
+#: app/admin-pages/class-dashboard.php:209
+msgid "Open Posts Maintenance"
+msgstr ""
+
+#: app/admin-pages/class-dashboard.php:212
+msgid "CLI example"
+msgstr ""
+
+#: app/admin-pages/class-dashboard.php:219
+#: app/admin-pages/class-googledrive-manage.php:61
+#: app/admin-pages/class-googledrive-manage.php:85
+#: assets/js/drivetestpage.min.js:2562
+msgid "Manage Google Drive"
+msgstr ""
+
+#: app/admin-pages/class-dashboard.php:221
+#: assets/js/drivetestpage.min.js:2611
+msgid "Available"
+msgstr ""
+
+#: app/admin-pages/class-dashboard.php:221
+msgid "Authorize first"
+msgstr ""
+
+#: app/admin-pages/class-dashboard.php:225
+msgid "Upload files, browse folders, rename items, and manage Drive content directly from WordPress once you authenticate."
+msgstr ""
+
+#: app/admin-pages/class-dashboard.php:229
+msgid "Open Manage Drive"
+msgstr ""
+
+#: app/admin-pages/class-dashboard.php:233
+msgid "Connect Google Drive"
+msgstr ""
+
+#: app/admin-pages/class-dashboard.php:236
+msgid "Authenticate your Google account to access the Manage Drive workspace."
+msgstr ""
+
+#: app/admin-pages/class-dashboard.php:513
+msgid "You do not have permission to manage this setting."
+msgstr ""
+
+#: app/admin-pages/class-googledrive-settings.php:76
+#: assets/js/drivetestpage.min.js:2563
 msgid "Google Drive Test"
+msgstr ""
+
+#: app/endpoints/v1/class-googledrive-rest.php:76
+#: app/endpoints/v1/class-googledrive-rest.php:126
+#: app/endpoints/v1/class-googledrive-rest.php:585
+#: app/endpoints/v1/class-googledrive-rest.php:658
+#: app/endpoints/v1/class-googledrive-rest.php:724
+#: app/endpoints/v1/class-googledrive-rest.php:775
+msgid "Authenticate with Google Drive to continue."
+msgstr ""
+
+#: app/endpoints/v1/class-googledrive-rest.php:87
+msgid "A file and a new name are required to rename items."
+msgstr ""
+
+#: app/endpoints/v1/class-googledrive-rest.php:135
+msgid "A file ID is required."
+msgstr ""
+
+#: app/endpoints/v1/class-googledrive-rest.php:387
+msgid "Client ID and Client Secret are required."
+msgstr ""
+
+#: app/endpoints/v1/class-googledrive-rest.php:398
+#: assets/js/drivetestpage.min.js:1274
+msgid "Credentials saved successfully."
+msgstr ""
+
+#: app/endpoints/v1/class-googledrive-rest.php:412
+msgid "Google OAuth credentials are not configured yet."
+msgstr ""
+
+#: app/endpoints/v1/class-googledrive-rest.php:483
+#: assets/js/drivetestpage.min.js:1325
+msgid "Google Drive access revoked successfully."
+msgstr ""
+
+#: app/endpoints/v1/class-googledrive-rest.php:484
+msgid "No active Google Drive session was found."
+msgstr ""
+
+#: app/endpoints/v1/class-googledrive-rest.php:501
+msgid "Authorization code missing."
+msgstr ""
+
+#: app/endpoints/v1/class-googledrive-rest.php:510
+msgid "Invalid or expired authorization state."
+msgstr ""
+
+#: app/endpoints/v1/class-googledrive-rest.php:522
+msgid "Authentication failed."
+msgstr ""
+
+#: app/endpoints/v1/class-googledrive-rest.php:665
+msgid "Please attach a file to upload."
+msgstr ""
+
+#: app/endpoints/v1/class-googledrive-rest.php:731
+msgid "File ID is required."
+msgstr ""
+
+#: app/endpoints/v1/class-googledrive-rest.php:782
+msgid "Folder name is required."
+msgstr ""
+
+#: app/endpoints/v1/class-googledrive-rest.php:959
+msgid "Upload failed before reaching WordPress."
+msgstr ""
+
+#: app/endpoints/v1/class-googledrive-rest.php:963
+msgid "File upload encountered an error."
+msgstr ""
+
+#: app/endpoints/v1/class-googledrive-rest.php:970
+msgid "The selected file exceeds the allowed upload size."
+msgstr ""
+
+#: app/endpoints/v1/class-googledrive-rest.php:982
+#: app/endpoints/v1/class-googledrive-rest.php:991
+msgid "The selected file type is not allowed for upload."
+msgstr ""
+
+#: app/posts-maintenance/class-manager.php:62
+msgid "A scan is already running. Please wait for it to finish or cancel it."
+msgstr ""
+
+#: app/posts-maintenance/class-manager.php:78
+#: assets/js/postsmaintenance.min.js:930
+msgid "Queued background scan..."
+msgstr ""
+
+#: app/posts-maintenance/class-manager.php:99
+msgid "No content matches the selected post types yet."
+msgstr ""
+
+#: app/posts-maintenance/class-manager.php:132
+msgid "No active scan to cancel."
+msgstr ""
+
+#: app/posts-maintenance/class-manager.php:146
+msgid "Cancellation requested. Wrapping up the current batch..."
+msgstr ""
+
+#: app/posts-maintenance/class-manager.php:208
+msgid "Maintenance scan finished."
+msgstr ""
+
+#. translators: 1: processed posts, 2: total posts
+#: app/posts-maintenance/class-manager.php:228
+#, php-format
+msgid "Processed %1$d of %2$d posts..."
+msgstr ""
+
+#: app/posts-maintenance/class-manager.php:454
+#: assets/js/postsmaintenance.min.js:934
+msgid "Scan cancelled by user."
+msgstr ""
+
+#: core/class-dependency-guard.php:58
+msgid "an unknown version"
+msgstr ""
+
+#. translators: %s: Detected google/apiclient version.
+#: core/class-dependency-guard.php:80
+#, php-format
+msgid "Google Drive support forced on while another plugin provides google/apiclient %s. Double-check for compatibility issues."
+msgstr ""
+
+#. translators: 1: Detected google/apiclient version, 2: Minimum supported version.
+#: core/class-dependency-guard.php:89
+#, php-format
+msgid "Google Drive features are disabled because google/apiclient %1$s is loaded (requires %2$s or newer)."
+msgstr ""
+
+#: assets/js/drivetestpage.min.js:964
+msgid "Unknown size"
+msgstr ""
+
+#: assets/js/drivetestpage.min.js:969
+msgid "0 B"
+msgstr ""
+
+#: assets/js/drivetestpage.min.js:1025
+#: assets/js/drivetestpage.min.js:1331
+#: assets/js/drivetestpage.min.js:2286
+msgid "My Drive"
+msgstr ""
+
+#: assets/js/drivetestpage.min.js:1053
+msgid "Server default"
+msgstr ""
+
+#: assets/js/drivetestpage.min.js:1061
+msgid "Connected to Google Drive"
+msgstr ""
+
+#: assets/js/drivetestpage.min.js:1063
+msgid "You can upload files, browse folders, and trigger Drive tasks directly from WordPress."
+msgstr ""
+
+#: assets/js/drivetestpage.min.js:1064
+msgid "Google Drive is connected. Use the Manage Google Drive page to work with your files."
+msgstr ""
+
+#: assets/js/drivetestpage.min.js:1068
+msgid "Connect your Google account"
+msgstr ""
+
+#: assets/js/drivetestpage.min.js:1069
+msgid "Finish Google authentication to unlock uploads, folder creation, and file browsing tools."
+msgstr ""
+
+#: assets/js/drivetestpage.min.js:1079
+msgid "API Credentials"
+msgstr ""
+
+#: assets/js/drivetestpage.min.js:1080
+msgid "Stored"
+msgstr ""
+
+#: assets/js/drivetestpage.min.js:1080
+#: assets/js/drivetestpage.min.js:2611
+msgid "Missing"
+msgstr ""
+
+#: assets/js/drivetestpage.min.js:1083
+msgid "Client ID and secret are saved securely."
+msgstr ""
+
+#: assets/js/drivetestpage.min.js:1084
+msgid "Add your OAuth client ID and secret to continue."
+msgstr ""
+
+#: assets/js/drivetestpage.min.js:1088
+#: assets/js/drivetestpage.min.js:2606
+msgid "Authentication"
+msgstr ""
+
+#: assets/js/drivetestpage.min.js:1089
+#: assets/js/drivetestpage.min.js:2607
+msgid "Active"
+msgstr ""
+
+#: assets/js/drivetestpage.min.js:1089
+msgid "Not connected"
+msgstr ""
+
+#: assets/js/drivetestpage.min.js:1092
+msgid "Drive actions are ready to go."
+msgstr ""
+
+#: assets/js/drivetestpage.min.js:1093
+msgid "Authenticate with Google to manage Drive content."
+msgstr ""
+
+#: assets/js/drivetestpage.min.js:1097
+msgid "Upload Limit"
+msgstr ""
+
+#: assets/js/drivetestpage.min.js:1100
+msgid "Matches the maximum upload size allowed by this site."
+msgstr ""
+
+#: assets/js/drivetestpage.min.js:1108
+msgid "Create OAuth client credentials in Google Cloud Console using the Web application type."
+msgstr ""
+
+#: assets/js/drivetestpage.min.js:1109
+msgid "Add the redirect URI below to the list of authorized redirect URIs."
+msgstr ""
+
+#: assets/js/drivetestpage.min.js:1110
+msgid "Paste the client ID and secret into the form on this page, then save."
+msgstr ""
+
+#: assets/js/drivetestpage.min.js:1111
+msgid "Click “Authenticate with Google Drive” to complete the connection."
+msgstr ""
+
+#: assets/js/drivetestpage.min.js:1151
+msgid "Google Drive authentication completed successfully."
+msgstr ""
+
+#: assets/js/drivetestpage.min.js:1154
+msgid "Google Drive authentication failed. Please try again."
+msgstr ""
+
+#: assets/js/drivetestpage.min.js:1255
+msgid "Both Client ID and Client Secret are required."
+msgstr ""
+
+#: assets/js/drivetestpage.min.js:1271
+#: assets/js/drivetestpage.min.js:1279
+msgid "Unable to save credentials."
+msgstr ""
+
+#: assets/js/drivetestpage.min.js:1287
+msgid "Please save your Google credentials before authenticating."
+msgstr ""
+
+#: assets/js/drivetestpage.min.js:1299
+#: assets/js/drivetestpage.min.js:1305
+msgid "Unable to start authentication."
+msgstr ""
+
+#: assets/js/drivetestpage.min.js:1322
+#: assets/js/drivetestpage.min.js:1344
+msgid "Unable to revoke authentication."
+msgstr ""
+
+#: assets/js/drivetestpage.min.js:1404
+#: assets/js/drivetestpage.min.js:1411
+msgid "Unable to load Drive files."
+msgstr ""
+
+#: assets/js/drivetestpage.min.js:1531
+msgid "Unable to copy the redirect URI automatically. Please copy it manually."
+msgstr ""
+
+#: assets/js/drivetestpage.min.js:1539
+msgid "Please choose a file to upload."
+msgstr ""
+
+#: assets/js/drivetestpage.min.js:1546
+#, js-format
+msgid "File exceeds the maximum upload size of %s."
+msgstr ""
+
+#: assets/js/drivetestpage.min.js:1583
+#: assets/js/drivetestpage.min.js:1603
+msgid "Upload failed. Please try again."
+msgstr ""
+
+#: assets/js/drivetestpage.min.js:1597
+msgid "File uploaded successfully."
+msgstr ""
+
+#: assets/js/drivetestpage.min.js:1622
+#: assets/js/drivetestpage.min.js:1644
+msgid "Unable to download the file."
+msgstr ""
+
+#: assets/js/drivetestpage.min.js:1650
+msgid "Folder name cannot be empty."
+msgstr ""
+
+#: assets/js/drivetestpage.min.js:1666
+#: assets/js/drivetestpage.min.js:1673
+msgid "Unable to create folder."
+msgstr ""
+
+#: assets/js/drivetestpage.min.js:1669
+msgid "Folder created successfully."
+msgstr ""
+
+#: assets/js/drivetestpage.min.js:1731
+msgid "A name is required."
+msgstr ""
+
+#: assets/js/drivetestpage.min.js:1747
+#: assets/js/drivetestpage.min.js:1754
+msgid "Unable to rename the item."
+msgstr ""
+
+#: assets/js/drivetestpage.min.js:1751
+msgid "Item renamed successfully."
+msgstr ""
+
+#: assets/js/drivetestpage.min.js:1764
+#, js-format
+msgid "Are you sure you want to delete “%s”? This action cannot be undone."
+msgstr ""
+
+#: assets/js/drivetestpage.min.js:1784
+#: assets/js/drivetestpage.min.js:1795
+msgid "Unable to delete the item."
+msgstr ""
+
+#: assets/js/drivetestpage.min.js:1791
+msgid "Folder deleted."
+msgstr ""
+
+#: assets/js/drivetestpage.min.js:1792
+msgid "File deleted."
+msgstr ""
+
+#: assets/js/drivetestpage.min.js:1845
+#: assets/js/drivetestpage.min.js:2429
+msgid "Folder"
+msgstr ""
+
+#: assets/js/drivetestpage.min.js:1848
+#: assets/js/drivetestpage.min.js:2429
+msgid "File"
+msgstr ""
+
+#: assets/js/drivetestpage.min.js:1875
+#, js-format
+msgid "Preview of %s"
+msgstr ""
+
+#: assets/js/drivetestpage.min.js:1899
+msgid "FILE"
+msgstr ""
+
+#: assets/js/drivetestpage.min.js:1906
+msgid "Manage Google Drive Connection"
+msgstr ""
+
+#: assets/js/drivetestpage.min.js:1907
+msgid "Connect to Google Drive"
+msgstr ""
+
+#: assets/js/drivetestpage.min.js:1909
+msgid "Your Google account is connected. Revoke access to disconnect this site or re-authenticate if needed."
+msgstr ""
+
+#: assets/js/drivetestpage.min.js:1913
+msgid "Authenticate with your Google account to unlock uploads, folder creation, and live browsing of Drive files."
+msgstr ""
+
+#: assets/js/drivetestpage.min.js:1918
+msgid "Redirecting…"
+msgstr ""
+
+#: assets/js/drivetestpage.min.js:1921
+msgid "Re-authenticate with Google Drive"
+msgstr ""
+
+#: assets/js/drivetestpage.min.js:1922
+msgid "Authenticate with Google Drive"
+msgstr ""
+
+#: assets/js/drivetestpage.min.js:1949
+msgid "Revoking…"
+msgstr ""
+
+#: assets/js/drivetestpage.min.js:1950
+msgid "Revoke Google Drive Access"
+msgstr ""
+
+#: assets/js/drivetestpage.min.js:1955
+msgid "You’ll be redirected to Google for OAuth approval. Upon success, the page refreshes automatically."
+msgstr ""
+
+#: assets/js/drivetestpage.min.js:1974
+msgid "Generate OAuth credentials inside the <a>Google Cloud Console</a>, then store them here to enable Drive tools."
+msgstr ""
+
+#: assets/js/drivetestpage.min.js:1990
+msgid "Copy the OAuth Client ID from <a>Google Cloud Console</a> after enabling the Drive API."
+msgstr ""
+
+#: assets/js/drivetestpage.min.js:2006
+msgid "Paste the matching Client Secret from your Google OAuth credentials screen."
+msgstr ""
+
+#: assets/js/drivetestpage.min.js:2025
+msgid "Google API Credentials"
+msgstr ""
+
+#: assets/js/drivetestpage.min.js:2035
+msgid "Collapse form"
+msgstr ""
+
+#: assets/js/drivetestpage.min.js:2036
+msgid "Edit credentials"
+msgstr ""
+
+#: assets/js/drivetestpage.min.js:2045
+msgid "Client ID"
+msgstr ""
+
+#: assets/js/drivetestpage.min.js:2058
+msgid "Client Secret"
+msgstr ""
+
+#: assets/js/drivetestpage.min.js:2071
+#: assets/js/drivetestpage.min.js:2134
+msgid "Redirect URI"
+msgstr ""
+
+#: assets/js/drivetestpage.min.js:2073
+msgid "Add this URL to the list of authorized redirect URIs in Google Cloud Console."
+msgstr ""
+
+#: assets/js/drivetestpage.min.js:2093
+#: assets/js/drivetestpage.min.js:2144
+msgid "Copied"
+msgstr ""
+
+#: assets/js/drivetestpage.min.js:2094
+#: assets/js/drivetestpage.min.js:2145
+msgid "Copy URI"
+msgstr ""
+
+#: assets/js/drivetestpage.min.js:2099
+#: assets/js/drivetestpage.min.js:2151
+msgid "Redirect URI copied to clipboard."
+msgstr ""
+
+#: assets/js/drivetestpage.min.js:2107
+msgid "OAuth scopes"
+msgstr ""
+
+#: assets/js/drivetestpage.min.js:2118
+msgid "Saving…"
+msgstr ""
+
+#: assets/js/drivetestpage.min.js:2119
+msgid "Save Credentials"
+msgstr ""
+
+#: assets/js/drivetestpage.min.js:2126
+msgid "Credentials stored securely. Re-open the form above whenever you rotate keys or need to verify them."
+msgstr ""
+
+#: assets/js/drivetestpage.min.js:2165
+#: assets/js/drivetestpage.min.js:2253
+msgid "Upload to Drive"
+msgstr ""
+
+#: assets/js/drivetestpage.min.js:2167
+msgid "Drag & drop a file or browse your device. Files land in the folder you’re currently viewing."
+msgstr ""
+
+#: assets/js/drivetestpage.min.js:2190
+msgid "Drop files or browse"
+msgstr ""
+
+#: assets/js/drivetestpage.min.js:2193
+msgid "Accepted formats match your Drive allowlist. Upload limit:"
+msgstr ""
+
+#: assets/js/drivetestpage.min.js:2196
+msgid "Choose a file"
+msgstr ""
+
+#: assets/js/drivetestpage.min.js:2217
+#, js-format
+msgid "Size: %s"
+msgstr ""
+
+#: assets/js/drivetestpage.min.js:2223
+msgid "Clear selection"
+msgstr ""
+
+#: assets/js/drivetestpage.min.js:2230
+#, js-format
+msgid "Uploading… %d%%"
+msgstr ""
+
+#: assets/js/drivetestpage.min.js:2237
+msgid "Destination folder"
+msgstr ""
+
+#: assets/js/drivetestpage.min.js:2252
+msgid "Uploading…"
+msgstr ""
+
+#: assets/js/drivetestpage.min.js:2262
+msgid "Create New Folder"
+msgstr ""
+
+#: assets/js/drivetestpage.min.js:2264
+msgid "Spin up a folder inside your active Drive location and instantly refresh the listing below."
+msgstr ""
+
+#: assets/js/drivetestpage.min.js:2269
+msgid "Folder name"
+msgstr ""
+
+#: assets/js/drivetestpage.min.js:2276
+msgid "Marketing uploads"
+msgstr ""
+
+#: assets/js/drivetestpage.min.js:2283
+msgid "Parent folder"
+msgstr ""
+
+#: assets/js/drivetestpage.min.js:2296
+msgid "Creating…"
+msgstr ""
+
+#: assets/js/drivetestpage.min.js:2297
+msgid "Create Folder"
+msgstr ""
+
+#: assets/js/drivetestpage.min.js:2310
+msgid "Google Drive breadcrumb"
+msgstr ""
+
+#: assets/js/drivetestpage.min.js:2333
+msgid "Up One Level"
+msgstr ""
+
+#: assets/js/drivetestpage.min.js:2337
+msgid "Sort by"
+msgstr ""
+
+#: assets/js/drivetestpage.min.js:2344
+msgid "Latest first"
+msgstr ""
+
+#: assets/js/drivetestpage.min.js:2345
+msgid "Oldest first"
+msgstr ""
+
+#: assets/js/drivetestpage.min.js:2356
+msgid "Search this folder"
+msgstr ""
+
+#: assets/js/drivetestpage.min.js:2357
+msgid "Search Drive"
+msgstr ""
+
+#: assets/js/drivetestpage.min.js:2365
+msgid "Search"
+msgstr ""
+
+#: assets/js/drivetestpage.min.js:2380
+msgid "Clear"
+msgstr ""
+
+#: assets/js/drivetestpage.min.js:2390
+msgid "Loading files…"
+msgstr ""
+
+#: assets/js/drivetestpage.min.js:2397
+msgid "No Drive files yet"
+msgstr ""
+
+#: assets/js/drivetestpage.min.js:2400
+msgid "Upload a file or refresh the list to view items from Google Drive."
+msgstr ""
+
+#: assets/js/drivetestpage.min.js:2421
+msgid "Unknown date"
+msgstr ""
+
+#: assets/js/drivetestpage.min.js:2435
+msgid "File actions"
+msgstr ""
+
+#: assets/js/drivetestpage.min.js:2459
+msgid "Open Folder"
+msgstr ""
+
+#: assets/js/drivetestpage.min.js:2470
+msgid "Download"
+msgstr ""
+
+#: assets/js/drivetestpage.min.js:2482
+msgid "Open in Drive"
+msgstr ""
+
+#: assets/js/drivetestpage.min.js:2497
+msgid "Rename"
+msgstr ""
+
+#: assets/js/drivetestpage.min.js:2505
+msgid "Delete"
+msgstr ""
+
+#: assets/js/drivetestpage.min.js:2517
+msgid "Rename item"
+msgstr ""
+
+#: assets/js/drivetestpage.min.js:2526
+msgid "Save"
+msgstr ""
+
+#: assets/js/drivetestpage.min.js:2529
+msgid "Cancel"
+msgstr ""
+
+#: assets/js/drivetestpage.min.js:2551
+msgid "Load More Files"
+msgstr ""
+
+#: assets/js/drivetestpage.min.js:2565
+msgid "Upload files, browse folders, and manage Drive content directly from WordPress."
+msgstr ""
+
+#: assets/js/drivetestpage.min.js:2566
+msgid "Manage Google Drive credentials, authenticate, and test Drive file operations."
+msgstr ""
+
+#: assets/js/drivetestpage.min.js:2568
+msgid "Drive workspace"
+msgstr ""
+
+#: assets/js/drivetestpage.min.js:2569
+msgid "Drive integration"
+msgstr ""
+
+#: assets/js/drivetestpage.min.js:2574
+msgid "Something went wrong"
+msgstr ""
+
+#: assets/js/drivetestpage.min.js:2576
+#: assets/js/postsmaintenance.min.js:1552
+msgid "Heads up"
+msgstr ""
+
+#: assets/js/drivetestpage.min.js:2577
+msgid "Success"
+msgstr ""
+
+#: assets/js/drivetestpage.min.js:2590
+msgid "Needs setup"
+msgstr ""
+
+#: assets/js/drivetestpage.min.js:2600
+msgid "Connection overview"
+msgstr ""
+
+#: assets/js/drivetestpage.min.js:2601
+msgid "Quick stats to confirm your Drive handshake is healthy."
+msgstr ""
+
+#: assets/js/drivetestpage.min.js:2607
+#: assets/js/postsmaintenance.min.js:1040
+msgid "Pending"
+msgstr ""
+
+#: assets/js/drivetestpage.min.js:2610
+msgid "Stored credentials"
+msgstr ""
+
+#: assets/js/drivetestpage.min.js:2614
+msgid "Upload limit"
+msgstr ""
+
+#: assets/js/drivetestpage.min.js:2618
+msgid "Scopes requested"
+msgstr ""
+
+#: assets/js/drivetestpage.min.js:2634
+#: assets/js/postsmaintenance.min.js:1557
+msgid "Dismiss"
+msgstr ""
+
+#: assets/js/drivetestpage.min.js:2674
+msgid "Your Drive Files"
+msgstr ""
+
+#: assets/js/drivetestpage.min.js:2675
+msgid "Browse the live Drive listing. Search, sort, open in Drive, or download instantly."
+msgstr ""
+
+#: assets/js/drivetestpage.min.js:2683
+msgid "Refreshing…"
+msgstr ""
+
+#: assets/js/drivetestpage.min.js:2683
+msgid "Refresh list"
+msgstr ""
+
+#: assets/js/postsmaintenance.min.js:931
+msgid "Crunching through posts in small batches."
+msgstr ""
+
+#: assets/js/postsmaintenance.min.js:932
+msgid "Wrapping up the current batch before stopping."
+msgstr ""
+
+#: assets/js/postsmaintenance.min.js:933
+msgid "Maintenance scan finished successfully."
+msgstr ""
+
+#: assets/js/postsmaintenance.min.js:935
+msgid "Something went wrong while scanning."
+msgstr ""
+
+#: assets/js/postsmaintenance.min.js:1041
+#: assets/js/postsmaintenance.min.js:1625
+msgid "Running"
+msgstr ""
+
+#: assets/js/postsmaintenance.min.js:1042
+msgid "Cancelling"
+msgstr ""
+
+#: assets/js/postsmaintenance.min.js:1043
+#: assets/js/postsmaintenance.min.js:1626
+msgid "Completed"
+msgstr ""
+
+#: assets/js/postsmaintenance.min.js:1044
+msgid "Cancelled"
+msgstr ""
+
+#: assets/js/postsmaintenance.min.js:1045
+msgid "Failed"
+msgstr ""
+
+#: assets/js/postsmaintenance.min.js:1050
+msgid "Idle"
+msgstr ""
+
+#: assets/js/postsmaintenance.min.js:1098
+msgid "Settings endpoint unavailable."
+msgstr ""
+
+#: assets/js/postsmaintenance.min.js:1142
+msgid "Automation settings saved."
+msgstr ""
+
+#: assets/js/postsmaintenance.min.js:1148
+#: assets/js/postsmaintenance.min.js:1151
+msgid "Unable to save settings."
+msgstr ""
+
+#: assets/js/postsmaintenance.min.js:1196
+msgid "Unable to fetch status."
+msgstr ""
+
+#: assets/js/postsmaintenance.min.js:1366
+msgid "Select at least one post type."
+msgstr ""
+
+#: assets/js/postsmaintenance.min.js:1381
+msgid "Scan scheduled. We will keep updating the progress."
+msgstr ""
+
+#: assets/js/postsmaintenance.min.js:1386
+#: assets/js/postsmaintenance.min.js:1388
+msgid "Unable to start the scan."
+msgstr ""
+
+#: assets/js/postsmaintenance.min.js:1403
+msgid "Cancellation requested. We will stop after the current batch."
+msgstr ""
+
+#: assets/js/postsmaintenance.min.js:1408
+#: assets/js/postsmaintenance.min.js:1410
+msgid "Unable to cancel the scan."
+msgstr ""
+
+#: assets/js/postsmaintenance.min.js:1423
+msgid "Scan state reset. You can start a new run now."
+msgstr ""
+
+#: assets/js/postsmaintenance.min.js:1428
+#: assets/js/postsmaintenance.min.js:1430
+msgid "Unable to reset the scan state."
+msgstr ""
+
+#: assets/js/postsmaintenance.min.js:1438
+msgid "Not available"
+msgstr ""
+
+#: assets/js/postsmaintenance.min.js:1446
+msgid "Not yet run"
+msgstr ""
+
+#: assets/js/postsmaintenance.min.js:1449
+msgid "No post types selected"
+msgstr ""
+
+#: assets/js/postsmaintenance.min.js:1450
+msgid "Ready for your next scan."
+msgstr ""
+
+#: assets/js/postsmaintenance.min.js:1458
+#, js-format
+msgid "Runs daily at %s (site time)."
+msgstr ""
+
+#: assets/js/postsmaintenance.min.js:1459
+msgid "Automation paused until you enable it."
+msgstr ""
+
+#: assets/js/postsmaintenance.min.js:1461
+msgid "Saving preferences..."
+msgstr ""
+
+#: assets/js/postsmaintenance.min.js:1462
+msgid "Preferences synced to server."
+msgstr ""
+
+#: assets/js/postsmaintenance.min.js:1470
+msgid "Automation Suite"
+msgstr ""
+
+#: assets/js/postsmaintenance.min.js:1476
+msgid "Run health scans over thousands of posts without leaving the page. Choose your targets, fire the scanner, and let our background worker update the `wpmudev_test_last_scan` meta for every entry."
+msgstr ""
+
+#: assets/js/postsmaintenance.min.js:1479
+#, js-format
+msgid "Current filter: %s"
+msgstr ""
+
+#: assets/js/postsmaintenance.min.js:1480
+#, js-format
+msgid "Last run: %s"
+msgstr ""
+
+#: assets/js/postsmaintenance.min.js:1491
+msgid "Scan In Progress…"
+msgstr ""
+
+#: assets/js/postsmaintenance.min.js:1491
+msgid "Scan Posts Now"
+msgstr ""
+
+#: assets/js/postsmaintenance.min.js:1500
+#: assets/js/postsmaintenance.min.js:1599
+msgid "Syncing…"
+msgstr ""
+
+#: assets/js/postsmaintenance.min.js:1500
+msgid "Sync Status Now"
+msgstr ""
+
+#: assets/js/postsmaintenance.min.js:1504
+msgid "Cancel Scan"
+msgstr ""
+
+#: assets/js/postsmaintenance.min.js:1514
+msgid "Reset Scan State"
+msgstr ""
+
+#: assets/js/postsmaintenance.min.js:1519
+msgid "Auto-refreshing every few seconds while the scan runs."
+msgstr ""
+
+#: assets/js/postsmaintenance.min.js:1520
+msgid "Status refreshes automatically every few seconds."
+msgstr ""
+
+#: assets/js/postsmaintenance.min.js:1528
+msgid "Job status"
+msgstr ""
+
+#: assets/js/postsmaintenance.min.js:1533
+msgid "Items processed"
+msgstr ""
+
+#: assets/js/postsmaintenance.min.js:1534
+#, js-format
+msgid "%1$d of %2$d"
+msgstr ""
+
+#: assets/js/postsmaintenance.min.js:1535
+msgid "Progress auto-updates"
+msgstr ""
+
+#: assets/js/postsmaintenance.min.js:1538
+msgid "Daily automation"
+msgstr ""
+
+#: assets/js/postsmaintenance.min.js:1539
+msgid "Enabled"
+msgstr ""
+
+#: assets/js/postsmaintenance.min.js:1539
+msgid "Disabled"
+msgstr ""
+
+#: assets/js/postsmaintenance.min.js:1543
+msgid "Last completed scan"
+msgstr ""
+
+#: assets/js/postsmaintenance.min.js:1545
+msgid "Stored in \"Last Run Summary\""
+msgstr ""
+
+#: assets/js/postsmaintenance.min.js:1552
+msgid "All good"
+msgstr ""
+
+#: assets/js/postsmaintenance.min.js:1564
+msgid "Post Type Filters"
+msgstr ""
+
+#: assets/js/postsmaintenance.min.js:1566
+msgid "Select the post types you would like to include in the next maintenance scan."
+msgstr ""
+
+#: assets/js/postsmaintenance.min.js:1587
+msgid "No public post types were found."
+msgstr ""
+
+#: assets/js/postsmaintenance.min.js:1592
+msgid "Filters are saved automatically and reused by the daily cron task."
+msgstr ""
+
+#: assets/js/postsmaintenance.min.js:1599
+msgid "Sync Filters From Server"
+msgstr ""
+
+#: assets/js/postsmaintenance.min.js:1607
+msgid "Scan Progress"
+msgstr ""
+
+#: assets/js/postsmaintenance.min.js:1613
+#, js-format
+msgid "%1$d%% complete"
+msgstr ""
+
+#: assets/js/postsmaintenance.min.js:1616
+#, js-format
+msgid "%1$d of %2$d items processed."
+msgstr ""
+
+#: assets/js/postsmaintenance.min.js:1624
+msgid "Queued"
+msgstr ""
+
+#: assets/js/postsmaintenance.min.js:1624
+msgid "Waiting for background worker."
+msgstr ""
+
+#: assets/js/postsmaintenance.min.js:1625
+msgid "Processing posts in batches."
+msgstr ""
+
+#: assets/js/postsmaintenance.min.js:1626
+msgid "Meta updated and history recorded."
+msgstr ""
+
+#: assets/js/postsmaintenance.min.js:1640
+msgid "Automation Schedule"
+msgstr ""
+
+#: assets/js/postsmaintenance.min.js:1642
+msgid "Control how WP-Cron triggers scans automatically."
+msgstr ""
+
+#: assets/js/postsmaintenance.min.js:1648
+msgid "Enable daily WP-Cron task"
+msgstr ""
+
+#: assets/js/postsmaintenance.min.js:1649
+msgid "Keeps the maintenance scan running once per day without manual input."
+msgstr ""
+
+#: assets/js/postsmaintenance.min.js:1654
+msgid "Run multiple times per day"
+msgstr ""
+
+#: assets/js/postsmaintenance.min.js:1655
+msgid "Schedule up to six daily executions at specific times."
+msgstr ""
+
+#: assets/js/postsmaintenance.min.js:1667
+msgid "Run time (site timezone)"
+msgstr ""
+
+#: assets/js/postsmaintenance.min.js:1668
+msgid "Additional run time"
+msgstr ""
+
+#: assets/js/postsmaintenance.min.js:1686
+msgid "Remove"
+msgstr ""
+
+#: assets/js/postsmaintenance.min.js:1700
+msgid "Add another run time"
+msgstr ""
+
+#: assets/js/postsmaintenance.min.js:1704
+msgid "Maximum of six daily runs reached."
+msgstr ""
+
+#: assets/js/postsmaintenance.min.js:1711
+msgid "Each time listed above is queued automatically with WP-Cron."
+msgstr ""
+
+#: assets/js/postsmaintenance.min.js:1712
+msgid "Daily automation is paused until you enable it again."
+msgstr ""
+
+#: assets/js/postsmaintenance.min.js:1725
+msgid "Save Automation Settings"
+msgstr ""
+
+#: assets/js/postsmaintenance.min.js:1732
+msgid "WP-CLI Shortcut"
+msgstr ""
+
+#: assets/js/postsmaintenance.min.js:1734
+msgid "Run the same maintenance routine directly from the terminal. Perfect for cron jobs or CI pipelines."
+msgstr ""
+
+#: assets/js/postsmaintenance.min.js:1742
+msgid "Add `--allow-root` when running inside containers or root shells."
 msgstr ""

@@ -145,6 +145,31 @@
   gap: 24px;
 }
 
+.drive-card--upload,
+.drive-card--folder {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.drive-card--upload .drive-card__content,
+.drive-card--folder .drive-card__content {
+  flex: 1 1 auto;
+}
+
+.drive-card--upload .drive-card__content,
+.drive-card--folder .drive-card__content {
+  gap: 16px;
+}
+
+.drive-card--folder .drive-card__content--form {
+  gap: 16px;
+}
+
+.drive-card--upload .drive-upload-dropzone__inner {
+  gap: 12px;
+}
+
 .drive-card__content--actions {
   display: flex;
   flex-direction: column;
@@ -268,7 +293,7 @@
   position: relative;
   border: 2px dashed rgba(37, 99, 235, 0.35);
   border-radius: 20px;
-  padding: 36px 28px;
+  padding: 28px 24px;
   background: linear-gradient(135deg, rgba(59, 130, 246, 0.08), rgba(37, 99, 235, 0.05));
   text-align: center;
   cursor: pointer;

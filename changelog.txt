@@ -1,0 +1,9 @@
+WPMU DEV Plugin Test – Release Notes
+========================================
+
+Version 1.0.0 – 2025-10-28
+---------------------------
+- Added uninstall routine that purges credentials, options, scheduled tasks, and post meta.
+- Added dashboard override toggle and documented force-enable workflow for Google Client compatibility.
+- Hardened Google Drive upload validation and improved credentials UI (redirect URI copy helpers, status messaging).
+- Optimised release packaging (skip dev-only vendor libraries) and refined admin styling/layout tweaks.
