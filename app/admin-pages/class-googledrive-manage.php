@@ -1,26 +1,22 @@
 <?php
 /**
- * Google Drive test block.
+ * Google Drive management page.
  *
  * @link          https://wpmudev.com/
  * @since         1.0.0
  *
- * @author        WPMUDEV (https://wpmudev.com)
  * @package       WPMUDEV\PluginTest
- *
- * @copyright (c) 2025, Incsub (http://incsub.com)
  */
 
 namespace WPMUDEV\PluginTest\App\Admin_Pages;
 
-// Abort if called directly.
 defined( 'WPINC' ) || die;
 
 use WPMUDEV\PluginTest\Base;
 use WPMUDEV\PluginTest\App\GoogleDrive\Credentials_Manager;
 use WPMUDEV\PluginTest\Endpoints\V1\Drive_API;
 
-class Google_Drive extends Base {
+class Google_Drive_Manage extends Base {
 	/**
 	 * The page title.
 	 *
@@ -33,19 +29,10 @@ class Google_Drive extends Base {
 	 *
 	 * @var string
 	 */
-	private $page_slug = 'wpmudev_plugintest_drive';
+	private $page_slug = 'wpmudev_plugintest_drive_manage';
 
 	/**
-	 * Google Drive auth credentials.
-	 *
-	 * @since 1.0.0
-	 *
-	 * @var array
-	 */
-	private $creds = array();
-
-	/**
-	 * Page Assets.
+	 * Page assets definition.
 	 *
 	 * @var array
 	 */
@@ -59,38 +46,43 @@ class Google_Drive extends Base {
 	private $assets_version = '';
 
 	/**
-	 * A unique string id to be used in markup and jsx.
+	 * Unique DOM element id for React mount.
 	 *
 	 * @var string
 	 */
 	private $unique_id = '';
 
 	/**
-	 * Initializes the page.
+	 * Initialize the page.
 	 *
 	 * @return void
-	 * @since 1.0.0
-	 *
 	 */
 	public function init() {
-		$this->page_title     = __( 'Google Drive Test', 'wpmudev-plugin-test' );
-		$this->creds          = Credentials_Manager::get();
+		$this->page_title     = __( 'Manage Google Drive', 'wpmudev-plugin-test' );
 		$this->assets_version = ! empty( $this->script_data( 'version' ) ) ? $this->script_data( 'version' ) : WPMUDEV_PLUGINTEST_VERSION;
-		$this->unique_id      = "wpmudev_plugintest_drive_main_wrap-{$this->assets_version}";
+		$this->unique_id      = "wpmudev_plugintest_drive_manage_wrap-{$this->assets_version}";
 
 		add_action( 'admin_menu', array( $this, 'register_admin_page' ) );
 		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_assets' ) );
-		// Add body class to admin pages.
 		add_filter( 'admin_body_class', array( $this, 'admin_body_classes' ) );
 	}
 
+	/**
+	 * Register the submenu page when authenticated.
+	 *
+	 * @return void
+	 */
 	public function register_admin_page() {
+		if ( ! $this->is_authenticated() ) {
+			return;
+		}
+
 		$parent_slug = defined( 'WPMUDEV_PLUGINTEST_MENU_SLUG' ) ? WPMUDEV_PLUGINTEST_MENU_SLUG : 'wpmudev_plugintest_drive';
 
 		$page = add_submenu_page(
 			$parent_slug,
 			$this->page_title,
-			__( 'Google Drive Settings', 'wpmudev-plugin-test' ),
+			__( 'Manage Google Drive', 'wpmudev-plugin-test' ),
 			'manage_options',
 			$this->page_slug,
 			array( $this, 'callback' )
@@ -102,7 +94,7 @@ class Google_Drive extends Base {
 	}
 
 	/**
-	 * The admin page callback method.
+	 * Render callback.
 	 *
 	 * @return void
 	 */
@@ -111,7 +103,7 @@ class Google_Drive extends Base {
 	}
 
 	/**
-	 * Prepares assets.
+	 * Prepare assets for the React app.
 	 *
 	 * @return void
 	 */
@@ -125,14 +117,7 @@ class Google_Drive extends Base {
 		$style_src    = WPMUDEV_PLUGINTEST_ASSETS_URL . '/css/drivetestpage.min.css';
 		$dependencies = ! empty( $this->script_data( 'dependencies' ) )
 			? $this->script_data( 'dependencies' )
-			: array(
-				'react',
-				'wp-element',
-				'wp-i18n',
-				'wp-components',
-				'wp-api-fetch',
-				'wp-polyfill',
-			);
+			: array();
 
 		$this->page_scripts[ $handle ] = array(
 			'src'       => $src,
@@ -152,34 +137,97 @@ class Google_Drive extends Base {
 				'restEndpointDelete'   => 'wpmudev/v1/drive/delete',
 				'restEndpointRevoke'   => 'wpmudev/v1/drive/revoke',
 				'nonce'                => wp_create_nonce( 'wp_rest' ),
-				'authStatus'           => $this->get_auth_status(),
+				'authStatus'           => $this->is_authenticated(),
 				'redirectUri'          => home_url( '/wp-json/wpmudev/v1/drive/callback' ),
 				'hasCredentials'       => Credentials_Manager::has_credentials(),
 				'maxUploadSize'        => wp_max_upload_size(),
 				'scopes'               => Drive_API::get_scopes_list(),
-				'viewMode'             => 'settings',
+				'viewMode'             => 'manage',
 			),
 		);
 	}
 
 	/**
-	 * Checks if user is authenticated with Google Drive.
+	 * Enqueue assets.
+	 *
+	 * @return void
+	 */
+	public function enqueue_assets() {
+		if ( empty( $this->page_scripts ) ) {
+			return;
+		}
+
+		foreach ( $this->page_scripts as $handle => $page_script ) {
+			wp_register_script(
+				$handle,
+				$page_script['src'],
+				$page_script['deps'],
+				$page_script['ver'],
+				$page_script['strategy']
+			);
+
+			if ( ! empty( $page_script['localize'] ) ) {
+				wp_localize_script( $handle, 'wpmudevDriveTest', $page_script['localize'] );
+			}
+
+			wp_enqueue_script( $handle );
+
+			if ( ! empty( $page_script['style_src'] ) ) {
+				wp_enqueue_style( $handle, $page_script['style_src'], array(), $this->assets_version );
+			}
+		}
+	}
+
+	/**
+	 * Output wrapper element.
+	 *
+	 * @return void
+	 */
+	protected function view() {
+		echo '<div id="' . esc_attr( $this->unique_id ) . '" class="sui-wrap"></div>';
+	}
+
+	/**
+	 * Add SUI classes when viewing this page.
+	 *
+	 * @param string $classes Existing classes.
+	 *
+	 * @return string
+	 */
+	public function admin_body_classes( $classes = '' ) {
+		if ( ! function_exists( 'get_current_screen' ) ) {
+			return $classes;
+		}
+
+		$current_screen = get_current_screen();
+
+		if ( empty( $current_screen->id ) || false === strpos( $current_screen->id, $this->page_slug ) ) {
+			return $classes;
+		}
+
+		$classes .= ' sui-' . str_replace( '.', '-', WPMUDEV_PLUGINTEST_SUI_VERSION ) . ' ';
+
+		return $classes;
+	}
+
+	/**
+	 * Determine if the site currently holds a valid access token.
 	 *
 	 * @return bool
 	 */
-	private function get_auth_status() {
+	private function is_authenticated(): bool {
 		$access_token = get_option( 'wpmudev_drive_access_token', '' );
-		$expires_at   = get_option( 'wpmudev_drive_token_expires', 0 );
-		
+		$expires_at   = (int) get_option( 'wpmudev_drive_token_expires', 0 );
+
 		return ! empty( $access_token ) && time() < $expires_at;
 	}
 
 	/**
-	 * Gets assets data for given key.
+	 * Helper to fetch script asset data.
 	 *
-	 * @param string $key
+	 * @param string $key Data key.
 	 *
-	 * @return string|array
+	 * @return mixed
 	 */
 	protected function script_data( string $key = '' ) {
 		$raw_script_data = $this->raw_script_data();
@@ -188,7 +236,7 @@ class Google_Drive extends Base {
 	}
 
 	/**
-	 * Gets the script data from assets php file.
+	 * Load script metadata produced by Webpack.
 	 *
 	 * @return array
 	 */
@@ -200,66 +248,5 @@ class Google_Drive extends Base {
 		}
 
 		return (array) $script_data;
-	}
-
-	/**
-	 * Prepares assets.
-	 *
-	 * @return void
-	 */
-	public function enqueue_assets() {
-		if ( ! empty( $this->page_scripts ) ) {
-			foreach ( $this->page_scripts as $handle => $page_script ) {
-				wp_register_script(
-					$handle,
-					$page_script['src'],
-					$page_script['deps'],
-					$page_script['ver'],
-					$page_script['strategy']
-				);
-
-				if ( ! empty( $page_script['localize'] ) ) {
-					wp_localize_script( $handle, 'wpmudevDriveTest', $page_script['localize'] );
-				}
-
-				wp_enqueue_script( $handle );
-
-				if ( ! empty( $page_script['style_src'] ) ) {
-					wp_enqueue_style( $handle, $page_script['style_src'], array(), $this->assets_version );
-				}
-			}
-		}
-	}
-
-	/**
-	 * Prints the wrapper element which React will use as root.
-	 *
-	 * @return void
-	 */
-	protected function view() {
-		echo '<div id="' . esc_attr( $this->unique_id ) . '" class="sui-wrap"></div>';
-	}
-
-	/**
-	 * Adds the SUI class on markup body.
-	 *
-	 * @param string $classes
-	 *
-	 * @return string
-	 */
-	public function admin_body_classes( $classes = '' ) {
-		if ( ! function_exists( 'get_current_screen' ) ) {
-			return $classes;
-		}
-
-		$current_screen = get_current_screen();
-
-		if ( empty( $current_screen->id ) || ! strpos( $current_screen->id, $this->page_slug ) ) {
-			return $classes;
-		}
-
-		$classes .= ' sui-' . str_replace( '.', '-', WPMUDEV_PLUGINTEST_SUI_VERSION ) . ' ';
-
-		return $classes;
 	}
 }

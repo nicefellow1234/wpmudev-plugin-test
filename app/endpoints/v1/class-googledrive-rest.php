@@ -215,6 +215,18 @@ class Drive_API extends Base {
 
 		register_rest_route(
 			'wpmudev/v1/drive',
+			'/revoke',
+			array(
+				array(
+					'methods'             => WP_REST_Server::DELETABLE,
+					'callback'            => array( $this, 'revoke_auth' ),
+					'permission_callback' => array( $this, 'check_manage_permissions' ),
+				),
+			)
+		);
+
+		register_rest_route(
+			'wpmudev/v1/drive',
 			'/callback',
 			array(
 				array(
@@ -419,6 +431,57 @@ class Drive_API extends Base {
 			array(
 				'success' => true,
 				'authUrl' => $auth_url,
+			)
+		);
+	}
+
+	/**
+	 * Revoke stored Google OAuth tokens and clear options.
+	 *
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public function revoke_auth() {
+		$this->setup_google_client();
+
+		$access_token  = get_option( self::ACCESS_TOKEN_OPTION, array() );
+		$refresh_token = get_option( self::REFRESH_TOKEN_OPTION );
+		$had_tokens    = ! empty( $access_token ) || ! empty( $refresh_token );
+
+		if ( $this->client ) {
+			try {
+				$token_value = '';
+				if ( is_array( $access_token ) ) {
+					$token_value = isset( $access_token['access_token'] ) ? (string) $access_token['access_token'] : '';
+				} elseif ( is_string( $access_token ) ) {
+					$token_value = $access_token;
+				}
+
+				if ( $token_value ) {
+					$this->client->revokeToken( $token_value );
+				}
+
+				if ( ! empty( $refresh_token ) ) {
+					$this->client->revokeToken( (string) $refresh_token );
+				}
+			} catch ( Exception $e ) {
+				return new WP_Error( 'revoke_failed', $e->getMessage(), array( 'status' => 500 ) );
+			}
+		}
+
+		delete_option( self::ACCESS_TOKEN_OPTION );
+		delete_option( self::REFRESH_TOKEN_OPTION );
+		delete_option( self::TOKEN_EXPIRY_OPTION );
+
+		if ( $this->client ) {
+			$this->client->setAccessToken( null );
+		}
+
+		return new WP_REST_Response(
+			array(
+				'success' => true,
+				'message' => $had_tokens
+					? __( 'Google Drive access revoked successfully.', 'wpmudev-plugin-test' )
+					: __( 'No active Google Drive session was found.', 'wpmudev-plugin-test' ),
 			)
 		);
 	}

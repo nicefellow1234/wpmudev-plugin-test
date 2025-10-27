@@ -91,6 +91,7 @@ const DrivePage = () => {
     const [ isAuthenticated, setIsAuthenticated ] = useState( Boolean( driveConfig.authStatus ) );
     const [ savingCredentials, setSavingCredentials ] = useState( false );
     const [ authInProgress, setAuthInProgress ] = useState( false );
+    const [ revokingAuth, setRevokingAuth ] = useState( false );
     const [ filesLoading, setFilesLoading ] = useState( false );
     const [ files, setFiles ] = useState( [] );
     const [ nextPageToken, setNextPageToken ] = useState( null );
@@ -115,6 +116,9 @@ const DrivePage = () => {
 	const skipNextSearchRef = useRef( false );
 	const initialSortSyncRef = useRef( true );
 	const [ previewFailures, setPreviewFailures ] = useState( {} );
+	const viewMode = driveConfig.viewMode || 'settings';
+	const isSettingsView = viewMode === 'settings';
+	const isManageView = viewMode === 'manage';
 
     const scopes = useMemo( () => driveConfig.scopes || [
         'https://www.googleapis.com/auth/drive.file',
@@ -133,7 +137,9 @@ const DrivePage = () => {
                 ? {
                     tone: 'success',
                     title: __( 'Connected to Google Drive', 'wpmudev-plugin-test' ),
-                    description: __( 'You can upload files, browse folders, and trigger Drive tasks directly from WordPress.', 'wpmudev-plugin-test' ),
+                    description: isManageView
+                        ? __( 'You can upload files, browse folders, and trigger Drive tasks directly from WordPress.', 'wpmudev-plugin-test' )
+                        : __( 'Google Drive is connected. Use the Manage Google Drive page to work with your files.', 'wpmudev-plugin-test' ),
                 }
                 : {
                     tone: 'muted',
@@ -141,7 +147,7 @@ const DrivePage = () => {
                     description: __( 'Finish Google authentication to unlock uploads, folder creation, and file browsing tools.', 'wpmudev-plugin-test' ),
                 }
         ),
-        [ isAuthenticated ]
+        [ isAuthenticated, isManageView ]
     );
 
     const statusCards = useMemo(
@@ -221,65 +227,65 @@ const DrivePage = () => {
     }, [] );
 
 useEffect( () => {
-    if ( isAuthenticated ) {
-        loadFiles();
-    }
-}, [ isAuthenticated ] );
-
-    useEffect( () => {
-        if ( ! isAuthenticated ) {
-            return undefined;
-        }
-
-        if ( initialSearchSyncRef.current ) {
-            initialSearchSyncRef.current = false;
-            return undefined;
-        }
-
-        if ( skipNextSearchRef.current ) {
-            skipNextSearchRef.current = false;
-            return undefined;
-        }
-
-        if ( searchDebounceRef.current ) {
-            clearTimeout( searchDebounceRef.current );
-        }
-
-        const trimmed = searchTerm.trim();
-        const delay = trimmed ? 400 : 250;
-
-        searchDebounceRef.current = setTimeout( () => {
-            loadFiles( { append: false, folderId: currentFolder?.id || '', search: trimmed, order: sortOrder } );
-        }, delay );
-
-    return () => {
-        if ( searchDebounceRef.current ) {
-            clearTimeout( searchDebounceRef.current );
-            searchDebounceRef.current = null;
-        }
-    };
-}, [ searchTerm, isAuthenticated ] );
+	if ( isAuthenticated && isManageView ) {
+		loadFiles();
+	}
+}, [ isAuthenticated, isManageView ] );
 
 useEffect( () => {
-    if ( ! isAuthenticated ) {
-        return;
-    }
+	if ( ! isAuthenticated || ! isManageView ) {
+		return undefined;
+	}
 
-    if ( initialSortSyncRef.current ) {
-        initialSortSyncRef.current = false;
-        return;
-    }
+	if ( initialSearchSyncRef.current ) {
+		initialSearchSyncRef.current = false;
+		return undefined;
+	}
 
-    skipNextSearchRef.current = true;
-    resetRenameState();
-    setOpenMenuId( null );
-    loadFiles( {
-        append: false,
-        folderId: currentFolder?.id || '',
-        search: searchTerm.trim(),
-        order: sortOrder,
-    } );
-}, [ sortOrder ] );
+	if ( skipNextSearchRef.current ) {
+		skipNextSearchRef.current = false;
+		return undefined;
+	}
+
+	if ( searchDebounceRef.current ) {
+		clearTimeout( searchDebounceRef.current );
+	}
+
+	const trimmed = searchTerm.trim();
+	const delay = trimmed ? 400 : 250;
+
+	searchDebounceRef.current = setTimeout( () => {
+		loadFiles( { append: false, folderId: currentFolder?.id || '', search: trimmed, order: sortOrder } );
+	}, delay );
+
+	return () => {
+		if ( searchDebounceRef.current ) {
+			clearTimeout( searchDebounceRef.current );
+			searchDebounceRef.current = null;
+		}
+	};
+}, [ searchTerm, isAuthenticated, isManageView ] );
+
+useEffect( () => {
+	if ( ! isAuthenticated || ! isManageView ) {
+		return;
+	}
+
+	if ( initialSortSyncRef.current ) {
+		initialSortSyncRef.current = false;
+		return;
+	}
+
+	skipNextSearchRef.current = true;
+	resetRenameState();
+	setOpenMenuId( null );
+	loadFiles( {
+		append: false,
+		folderId: currentFolder?.id || '',
+		search: searchTerm.trim(),
+		order: sortOrder,
+	} );
+}, [ sortOrder, isAuthenticated, isManageView ] );
 
     useEffect( () => {
         if ( ! openMenuId ) {
@@ -369,6 +375,47 @@ useEffect( () => {
         }
     };
 
+    const handleRevokeAuth = async () => {
+        if ( revokingAuth ) {
+            return;
+        }
+
+        setRevokingAuth( true );
+        try {
+            const response = await apiFetch( {
+                path: getRestUrl( driveConfig.restEndpointRevoke ),
+                method: 'DELETE',
+            } );
+
+            if ( ! response?.success ) {
+                throw new Error( response?.message || __( 'Unable to revoke authentication.', 'wpmudev-plugin-test' ) );
+            }
+
+            const message = response?.message || __( 'Google Drive access revoked successfully.', 'wpmudev-plugin-test' );
+            showNotice( message );
+            driveConfig.authStatus = false;
+            setIsAuthenticated( false );
+            setFiles( [] );
+            setNextPageToken( null );
+            setFolderStack( [ { id: null, name: __( 'My Drive', 'wpmudev-plugin-test' ) } ] );
+            setSearchTerm( '' );
+            setUploadFile( null );
+            setUploadProgress( null );
+            setFileInputKey( Date.now() );
+            resetRenameState();
+            setOpenMenuId( null );
+            setPreviewFailures( {} );
+            initialSearchSyncRef.current = true;
+            skipNextSearchRef.current = false;
+            initialSortSyncRef.current = true;
+            setSortOrder( 'desc' );
+        } catch ( error ) {
+            showNotice( error?.message || __( 'Unable to revoke authentication.', 'wpmudev-plugin-test' ), 'error' );
+        } finally {
+            setRevokingAuth( false );
+        }
+    };
+
     const loadFiles = async ( {
         append = false,
         pageToken = '',
@@ -376,7 +423,7 @@ useEffect( () => {
         search,
         order,
     } = {} ) => {
-        if ( ! isAuthenticated ) {
+        if ( ! isAuthenticated || ! isManageView ) {
             return;
         }
 
@@ -859,26 +906,53 @@ const handleDragLeave = ( event ) => {
         );
     };
 
-    const renderDriveActions = () => (
-        <div className="drive-card drive-card--auth sui-box">
-            <div className="sui-box-header">
-                <h2 className="sui-box-title">{ __( 'Connect to Google Drive', 'wpmudev-plugin-test' ) }</h2>
+    const renderDriveActions = () => {
+        const heading = isAuthenticated
+            ? __( 'Manage Google Drive Connection', 'wpmudev-plugin-test' )
+            : __( 'Connect to Google Drive', 'wpmudev-plugin-test' );
+        const description = isAuthenticated
+            ? __( 'Your Google account is connected. Revoke access to disconnect this site or re-authenticate if needed.', 'wpmudev-plugin-test' )
+            : __( 'Authenticate with your Google account to unlock uploads, folder creation, and live browsing of Drive files.', 'wpmudev-plugin-test' );
+        const authLabel = authInProgress
+            ? __( 'Redirecting…', 'wpmudev-plugin-test' )
+            : ( isAuthenticated
+                ? __( 'Re-authenticate with Google Drive', 'wpmudev-plugin-test' )
+                : __( 'Authenticate with Google Drive', 'wpmudev-plugin-test' ) );
+
+        return (
+            <div className="drive-card drive-card--auth sui-box">
+                <div className="sui-box-header">
+                    <h2 className="sui-box-title">{ heading }</h2>
+                </div>
+                <div className="sui-box-body">
+                    <p className="drive-card__description">
+                        { description }
+                    </p>
+                    <div className="drive-card__actions" style={ { display: 'flex', gap: '0.75rem', flexWrap: 'wrap' } }>
+                        <Button
+                            variant="primary"
+                            onClick={ handleAuth }
+                            isBusy={ authInProgress }
+                            disabled={ authInProgress || revokingAuth }
+                        >
+                            { authLabel }
+                        </Button>
+                        { isAuthenticated && (
+                            <Button
+                                variant="secondary"
+                                onClick={ handleRevokeAuth }
+                                isBusy={ revokingAuth }
+                                disabled={ revokingAuth || authInProgress }
+                                isDestructive
+                            >
+                                { revokingAuth ? __( 'Revoking…', 'wpmudev-plugin-test' ) : __( 'Revoke Google Drive Access', 'wpmudev-plugin-test' ) }
+                            </Button>
+                        ) }
+                    </div>
+                </div>
             </div>
-            <div className="sui-box-body">
-                <p className="drive-card__description">
-                    { __( 'Authenticate with your Google account to unlock uploads, folder creation, and live browsing of Drive files.', 'wpmudev-plugin-test' ) }
-                </p>
-                <Button
-                    variant="primary"
-                    onClick={ handleAuth }
-                    isBusy={ authInProgress }
-                    disabled={ authInProgress }
-                >
-                    { authInProgress ? __( 'Redirecting…', 'wpmudev-plugin-test' ) : __( 'Authenticate with Google Drive', 'wpmudev-plugin-test' ) }
-                </Button>
-            </div>
-        </div>
-    );
+        );
+    };
 
     const renderFiles = () => {
         const breadcrumbItems = folderStack;
@@ -1137,13 +1211,20 @@ const handleDragLeave = ( event ) => {
         );
     };
 
+	const pageTitle = isManageView
+		? __( 'Manage Google Drive', 'wpmudev-plugin-test' )
+		: __( 'Google Drive Test', 'wpmudev-plugin-test' );
+	const pageDescription = isManageView
+		? __( 'Upload files, browse folders, and manage Drive content directly from WordPress.', 'wpmudev-plugin-test' )
+		: __( 'Manage Google Drive credentials, authenticate, and test Drive file operations.', 'wpmudev-plugin-test' );
+
     return (
         <div className="drive-page">
             <header className="drive-page__header sui-header">
                 <div className="drive-page__header-text">
-                    <h1 className="sui-header-title">{ __( 'Google Drive Test', 'wpmudev-plugin-test' ) }</h1>
+                    <h1 className="sui-header-title">{ pageTitle }</h1>
                     <p className="sui-description">
-                        { __( 'Manage Google Drive credentials, authenticate, and test Drive file operations.', 'wpmudev-plugin-test' ) }
+                        { pageDescription }
                     </p>
                 </div>
                 <div className="drive-page__header-status">
@@ -1155,15 +1236,17 @@ const handleDragLeave = ( event ) => {
                 </div>
             </header>
 
-            <div className="drive-page__summary">
-                { statusCards.map( ( card ) => (
-                    <div key={ card.id } className={ `drive-summary-card drive-summary-card--${ card.tone }` }>
-                        <span className="drive-summary-card__label">{ card.label }</span>
-                        <strong className="drive-summary-card__value">{ card.value }</strong>
-                        <p className="drive-summary-card__helper">{ card.helper }</p>
-                    </div>
-                ) ) }
-            </div>
+            { isSettingsView && (
+                <div className="drive-page__summary">
+                    { statusCards.map( ( card ) => (
+                        <div key={ card.id } className={ `drive-summary-card drive-summary-card--${ card.tone }` }>
+                            <span className="drive-summary-card__label">{ card.label }</span>
+                            <strong className="drive-summary-card__value">{ card.value }</strong>
+                            <p className="drive-summary-card__helper">{ card.helper }</p>
+                        </div>
+                    ) ) }
+                </div>
+            ) }
 
             { notice.message && (
                 <Notice status={ notice.type } isDismissible onRemove={ clearNotice }>
@@ -1171,9 +1254,10 @@ const handleDragLeave = ( event ) => {
                 </Notice>
             ) }
 
-            <div className="drive-page__grid drive-page__grid--primary">
-                <section className="drive-card drive-card--credentials sui-box">
-                    <div className="sui-box-header">
+            { isSettingsView && (
+                <div className="drive-page__grid drive-page__grid--primary">
+                    <section className="drive-card drive-card--credentials sui-box">
+                        <div className="sui-box-header">
                         <h2 className="sui-box-title">{ __( 'Google API Credentials', 'wpmudev-plugin-test' ) }</h2>
                         <div className="sui-actions-right">
                             { hasCredentials && (
@@ -1223,7 +1307,7 @@ const handleDragLeave = ( event ) => {
                                         onChange={ ( value ) => handleFieldChange( 'clientSecret', value ) }
                                     />
                                 </div>
-                        </div>
+                            </div>
                             <div className="sui-box-footer">
                                 <div className="sui-actions-right">
                                     <Button
@@ -1242,20 +1326,20 @@ const handleDragLeave = ( event ) => {
                             <p>{ __( 'Credentials are stored securely. Use “Edit credentials” to update them.', 'wpmudev-plugin-test' ) }</p>
                         </div>
                     ) }
-                </section>
+                    </section>
 
-                <section className="drive-card drive-card--guide sui-box">
-                    <div className="sui-box-header">
-                        <h2 className="sui-box-title">{ __( 'Connection checklist', 'wpmudev-plugin-test' ) }</h2>
-                    </div>
-                    <div className="sui-box-body">
-                        <ol className="drive-steps">
-                            { setupSteps.map( ( step, index ) => (
-                                <li key={ `step-${ index }` }>{ step }</li>
-                            ) ) }
-                        </ol>
-                        <div className="drive-info-block">
-                            <span className="drive-info-block__label">{ __( 'Authorized redirect URI', 'wpmudev-plugin-test' ) }</span>
+                    <section className="drive-card drive-card--guide sui-box">
+                        <div className="sui-box-header">
+                            <h2 className="sui-box-title">{ __( 'Connection checklist', 'wpmudev-plugin-test' ) }</h2>
+                        </div>
+                        <div className="sui-box-body">
+                            <ol className="drive-steps">
+                                { setupSteps.map( ( step, index ) => (
+                                    <li key={ `step-${ index }` }>{ step }</li>
+                                ) ) }
+                            </ol>
+                            <div className="drive-info-block">
+                                <span className="drive-info-block__label">{ __( 'Authorized redirect URI', 'wpmudev-plugin-test' ) }</span>
                             <code className="drive-info-block__code">{ driveConfig.redirectUri }</code>
                         </div>
                         <div className="drive-info-block">
@@ -1268,17 +1352,18 @@ const handleDragLeave = ( event ) => {
                         </div>
                     </div>
                 </section>
-            </div>
+                </div>
+            ) }
 
-            { ! isAuthenticated && (
+            { isSettingsView && (
                 <div className="drive-page__grid">
                     { renderDriveActions() }
                 </div>
             ) }
 
-            { isAuthenticated && (
+            { isAuthenticated && isManageView && (
                 <>
-                    <div className="drive-page__grid drive-page__grid--actions">
+                <div className="drive-page__grid drive-page__grid--actions">
                         <div className="drive-card drive-card--upload sui-box">
                             <div className="sui-box-header">
                                 <h2 className="sui-box-title">{ __( 'Upload File to Drive', 'wpmudev-plugin-test' ) }</h2>
