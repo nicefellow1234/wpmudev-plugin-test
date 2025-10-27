@@ -50,49 +50,48 @@ class Dependency_Guard {
 		self::$google_client_forced = false;
 		self::$google_client_detected_version = null;
 
-		if ( ! class_exists( '\Google_Client', false ) ) {
+		if ( ! class_exists( '\Google_Client' ) ) {
 			return true;
 		}
 
-		$detected_version  = defined( '\Google_Client::LIBVER' ) ? \Google_Client::LIBVER : null;
-		$detected_readable = $detected_version ?: __( 'an unknown version', 'wpmudev-plugin-test' );
-		self::$google_client_detected_version = $detected_readable;
+		$detected_version = defined( '\Google_Client::LIBVER' ) ? (string) \Google_Client::LIBVER : null;
+		self::$google_client_detected_version = $detected_version ?: __( 'an unknown version', 'wpmudev-plugin-test' );
 
 		if ( $detected_version && version_compare( $detected_version, self::GOOGLE_CLIENT_MIN_VERSION, '>=' ) ) {
 			return true;
 		}
 
-		/**
-		 * Filters whether to force-enable Google Drive tools when an outdated
-		 * google/apiclient build is detected.
-		 *
-		 * Returning true keeps the features enabled (default) while still
-		 * displaying a warning to administrators. Returning false restores the
-		 * previous behaviour which pauses Google Drive functionality.
-		 *
-		 * @since 1.0.0
-		 *
-		 * @param bool        $force_enable    Whether to keep Google Drive enabled.
-		 * @param string|null $detected_version Detected google/apiclient version.
-		 * @param string      $minimum_version  Recommended minimum version.
-		 */
+		$force_flag = (
+			( defined( 'WPMUDEV_PLUGINTEST_FORCE_GOOGLE_CLIENT' ) && WPMUDEV_PLUGINTEST_FORCE_GOOGLE_CLIENT )
+			|| (bool) get_option( 'wpmudev_plugin_test_force_google_client', false )
+		);
+
 		$force_enable = apply_filters(
 			'wpmudev_plugin_test/google_client_force_enable',
-			true,
+			$force_flag,
 			$detected_version,
 			self::GOOGLE_CLIENT_MIN_VERSION
 		);
 
 		if ( $force_enable ) {
 			self::$google_client_forced = true;
-			self::$google_client_error  = '';
+			self::$google_client_error  = sprintf(
+				/* translators: %s: Detected google/apiclient version. */
+				__( 'Google Drive support forced on while another plugin provides google/apiclient %s. Double-check for compatibility issues.', 'wpmudev-plugin-test' ),
+				self::$google_client_detected_version
+			);
 
 			return true;
 		}
 
-		self::$google_client_error = '';
+		self::$google_client_error = sprintf(
+			/* translators: 1: Detected google/apiclient version, 2: Minimum supported version. */
+			__( 'Google Drive features are disabled because google/apiclient %1$s is loaded (requires %2$s or newer).', 'wpmudev-plugin-test' ),
+			self::$google_client_detected_version,
+			self::GOOGLE_CLIENT_MIN_VERSION
+		);
 
-		return true;
+		return false;
 	}
 
 	/**
@@ -105,9 +104,9 @@ class Dependency_Guard {
 	}
 
 	/**
-	 * Display admin notice about conflicting Google Client versions.
+	 * Whether support was forced when an outdated Google Client was detected.
 	 */
-	public static function render_google_notice() {
-		// Deprecated no-op; notices no longer shown when forcing support.
+	public static function is_google_client_forced(): bool {
+		return self::$google_client_forced;
 	}
 }

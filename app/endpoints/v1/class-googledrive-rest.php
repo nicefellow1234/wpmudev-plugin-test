@@ -671,6 +671,16 @@ class Drive_API extends Base {
 		}
 
 		$parent_id = $this->sanitize_parent_id( $request->get_param( 'parent_id' ) );
+		$file_info = wp_check_filetype_and_ext( $file['tmp_name'], $file['name'], get_allowed_mime_types() );
+		$mime_type = '';
+
+		if ( is_array( $file_info ) && ! empty( $file_info['type'] ) ) {
+			$mime_type = (string) $file_info['type'];
+		}
+
+		if ( empty( $mime_type ) ) {
+			$mime_type = ! empty( $file['type'] ) ? (string) $file['type'] : 'application/octet-stream';
+		}
 
 		try {
 			$drive_file = new Google_Service_Drive_DriveFile();
@@ -683,7 +693,7 @@ class Drive_API extends Base {
 				$drive_file,
 				array(
 					'data'       => file_get_contents( $file['tmp_name'] ),
-					'mimeType'   => $file['type'] ?: 'application/octet-stream',
+					'mimeType'   => $mime_type,
 					'uploadType' => 'multipart',
 					'fields'     => 'id,name,mimeType,size,modifiedTime,webViewLink,iconLink,thumbnailLink,hasThumbnail,parents,capabilities(canRename,canDelete,canTrash)',
 				)
@@ -958,6 +968,27 @@ class Drive_API extends Base {
 			return new WP_Error(
 				'file_too_large',
 				__( 'The selected file exceeds the allowed upload size.', 'wpmudev-plugin-test' ),
+				array( 'status' => 400 )
+			);
+		}
+
+		$checked = wp_check_filetype_and_ext( $file['tmp_name'], $file['name'], get_allowed_mime_types() );
+		$mime    = isset( $checked['type'] ) ? $checked['type'] : '';
+		$ext     = isset( $checked['ext'] ) ? $checked['ext'] : '';
+
+		if ( empty( $mime ) || empty( $ext ) ) {
+			return new WP_Error(
+				'file_type_not_allowed',
+				__( 'The selected file type is not allowed for upload.', 'wpmudev-plugin-test' ),
+				array( 'status' => 400 )
+			);
+		}
+
+		$allowed_mimes = get_allowed_mime_types();
+		if ( ! in_array( $mime, $allowed_mimes, true ) ) {
+			return new WP_Error(
+				'file_type_not_allowed',
+				__( 'The selected file type is not allowed for upload.', 'wpmudev-plugin-test' ),
 				array( 'status' => 400 )
 			);
 		}

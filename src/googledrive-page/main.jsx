@@ -146,6 +146,8 @@ const DrivePage = () => {
 	const skipNextSearchRef = useRef( false );
 	const initialSortSyncRef = useRef( true );
 	const [ previewFailures, setPreviewFailures ] = useState( {} );
+	const [ redirectCopied, setRedirectCopied ] = useState( false );
+	const redirectCopyTimerRef = useRef( null );
 	const viewMode = driveConfig.viewMode || 'settings';
 	const isSettingsView = viewMode === 'settings';
 	const isManageView = viewMode === 'manage';
@@ -156,6 +158,7 @@ const DrivePage = () => {
     ], [] );
 
     const maxUploadSize = Number( driveConfig.maxUploadSize || window?.wp_max_upload_size || 0 );
+	const redirectUri = driveConfig.redirectUri || '';
     const uploadLimitLabel = maxUploadSize > 0
         ? formatBytes( maxUploadSize )
         : __( 'Server default', 'wpmudev-plugin-test' );
@@ -233,6 +236,15 @@ const DrivePage = () => {
         }
         return undefined;
     }, [ notice ] );
+
+	useEffect( () => {
+		return () => {
+			if ( redirectCopyTimerRef.current ) {
+				clearTimeout( redirectCopyTimerRef.current );
+				redirectCopyTimerRef.current = null;
+			}
+		};
+	}, [] );
 
     useEffect( () => {
         const params = new URLSearchParams( window.location.search );
@@ -595,6 +607,43 @@ const handleDragLeave = ( event ) => {
         event.stopPropagation();
         setOpenMenuId( ( current ) => ( current === fileId ? null : fileId ) );
     };
+
+	const handleCopyRedirect = async () => {
+		if ( ! redirectUri ) {
+			return;
+		}
+
+		if ( redirectCopyTimerRef.current ) {
+			clearTimeout( redirectCopyTimerRef.current );
+			redirectCopyTimerRef.current = null;
+		}
+
+		try {
+			if ( navigator?.clipboard?.writeText ) {
+				await navigator.clipboard.writeText( redirectUri );
+			} else {
+				const helperInput = document.createElement( 'input' );
+				helperInput.setAttribute( 'type', 'text' );
+				helperInput.setAttribute( 'readonly', 'readonly' );
+				helperInput.value = redirectUri;
+				document.body.appendChild( helperInput );
+				helperInput.select();
+				document.execCommand( 'copy' );
+				document.body.removeChild( helperInput );
+			}
+
+			setRedirectCopied( true );
+			redirectCopyTimerRef.current = setTimeout( () => {
+				setRedirectCopied( false );
+				redirectCopyTimerRef.current = null;
+			}, 3500 );
+		} catch ( error ) {
+			showNotice(
+				__( 'Unable to copy the redirect URI automatically. Please copy it manually.', 'wpmudev-plugin-test' ),
+				'error'
+			);
+		}
+	};
 
     const handleUpload = () => {
         if ( ! uploadFile ) {
@@ -1129,6 +1178,39 @@ const handleDragLeave = ( event ) => {
 									autoComplete="off"
 								/>
 							</FormField>
+							<FormField
+								label={ __( "Redirect URI", "wpmudev-plugin-test" ) }
+								labelFor="drive-redirect-uri"
+								description={ __(
+									"Add this URL to the list of authorized redirect URIs in Google Cloud Console.",
+									"wpmudev-plugin-test"
+								) }
+							>
+								<div className="drive-redirect-field">
+									<Input
+										id="drive-redirect-uri"
+										value={ redirectUri }
+										readOnly
+										onFocus={ ( event ) => event.target.select() }
+									/>
+									<Button
+										variant="secondary"
+										size="sm"
+										type="button"
+										onClick={ handleCopyRedirect }
+										disabled={ ! redirectUri }
+									>
+										{ redirectCopied
+											? __( "Copied", "wpmudev-plugin-test" )
+											: __( "Copy URI", "wpmudev-plugin-test" ) }
+									</Button>
+								</div>
+								{ redirectCopied && (
+									<span className="drive-redirect-field__status">
+										{ __( "Redirect URI copied to clipboard.", "wpmudev-plugin-test" ) }
+									</span>
+								) }
+							</FormField>
 						</CardContent>
 						<CardFooter className="drive-card__footer">
 							<div className="drive-card__footer-meta">
@@ -1157,6 +1239,30 @@ const handleDragLeave = ( event ) => {
 								"wpmudev-plugin-test"
 							) }
 						</p>
+						<div className="drive-redirect-summary">
+							<div className="drive-redirect-summary__header">
+								<span className="drive-card__footer-label">
+									{ __( "Redirect URI", "wpmudev-plugin-test" ) }
+								</span>
+								<Button
+									variant="ghost"
+									size="sm"
+									type="button"
+									onClick={ handleCopyRedirect }
+									disabled={ ! redirectUri }
+								>
+									{ redirectCopied
+										? __( "Copied", "wpmudev-plugin-test" )
+										: __( "Copy URI", "wpmudev-plugin-test" ) }
+								</Button>
+							</div>
+							<code className="drive-redirect-summary__value">{ redirectUri }</code>
+							{ redirectCopied && (
+								<span className="drive-redirect-field__status drive-redirect-summary__status">
+									{ __( "Redirect URI copied to clipboard.", "wpmudev-plugin-test" ) }
+								</span>
+							) }
+						</div>
 						{ scopeChips }
 					</CardContent>
 				) }

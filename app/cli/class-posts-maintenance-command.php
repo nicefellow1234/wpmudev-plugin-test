@@ -31,10 +31,10 @@ class Posts_Maintenance_Command extends WP_CLI_Command {
 
 		$manager = Manager::instance();
 
-		WP_CLI::log( 'Starting posts maintenance scan…' );
+		WP_CLI::log( 'Starting posts maintenance scan...' );
 
 		$processed = $manager->run_manual_scan( $post_types, function ( $current, $total ) {
-			WP_CLI::log( sprintf( 'Processed %1$d of %2$d items…', $current, $total ) );
+			WP_CLI::log( sprintf( 'Processed %1$d of %2$d items...', $current, $total ) );
 		} );
 
 		WP_CLI::success( sprintf( 'Scan finished. %d posts updated.', $processed ) );

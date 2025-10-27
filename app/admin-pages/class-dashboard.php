@@ -10,6 +10,7 @@ namespace WPMUDEV\PluginTest\App\Admin_Pages;
 defined( 'WPINC' ) || die;
 
 use WPMUDEV\PluginTest\Base;
+use WPMUDEV\PluginTest\Dependency_Guard;
 
 /**
  * Dashboard page shown in WP admin menu.
@@ -35,6 +36,7 @@ class Dashboard extends Base {
 	 */
 	public function init() {
 		add_action( 'admin_menu', array( $this, 'register_menu' ), 5 );
+		add_action( 'admin_post_wpmudev_plugintest_force_google', array( $this, 'handle_force_google_request' ) );
 	}
 
 	/**
@@ -80,13 +82,28 @@ class Dashboard extends Base {
 		$manage_url       = admin_url( 'admin.php?page=wpmudev_plugintest_drive_manage' );
 		$posts_url        = admin_url( 'admin.php?page=wpmudev_posts_maintenance' );
 		$docs_url         = 'https://console.cloud.google.com/apis/credentials';
+		$force_override   = (bool) get_option( 'wpmudev_plugin_test_force_google_client', false );
+		$forced_active    = $force_override || Dependency_Guard::is_google_client_forced();
 		$cli_example      = esc_html( 'wp wpmudev posts-maintenance scan --post_types=post,page' );
 		$drive_token      = get_option( 'wpmudev_drive_access_token', '' );
 		$drive_expires    = (int) get_option( 'wpmudev_drive_token_expires', 0 );
 		$has_drive_auth   = ! empty( $drive_token ) && time() < $drive_expires;
+		$force_updated    = isset( $_GET['force-updated'] ) ? sanitize_text_field( wp_unslash( $_GET['force-updated'] ) ) : '';
 		?>
 		<div class="shadcn-admin dashboard-admin">
 			<div class="dashboard-shell">
+				<?php if ( '' !== $force_updated ) : ?>
+					<div class="dashboard-notice dashboard-notice--<?php echo '1' === $force_updated ? 'success' : 'neutral'; ?>">
+						<p>
+							<?php
+							echo '1' === $force_updated
+								? esc_html__( 'Google Drive compatibility override enabled. Proceed with caution.', 'wpmudev-plugin-test' )
+								: esc_html__( 'Google Drive compatibility override disabled. Compatibility checks are active again.', 'wpmudev-plugin-test' );
+							?>
+						</p>
+					</div>
+				<?php endif; ?>
+
 				<section class="dashboard-hero">
 					<span class="dashboard-hero__badge"><?php esc_html_e( 'Overview', 'wpmudev-plugin-test' ); ?></span>
 					<h1><?php esc_html_e( 'WPMU DEV Plugin Test', 'wpmudev-plugin-test' ); ?></h1>
@@ -142,6 +159,42 @@ class Dashboard extends Base {
 								<?php esc_html_e( 'Resolve the dependency notice above to re-enable the Google Drive screen.', 'wpmudev-plugin-test' ); ?>
 							</p>
 						<?php endif; ?>
+
+						<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" class="dashboard-force-toggle">
+							<input type="hidden" name="action" value="wpmudev_plugintest_force_google" />
+							<?php wp_nonce_field( 'wpmudev_plugintest_force_google', 'wpmudev_plugintest_force_google_nonce' ); ?>
+
+							<label class="dashboard-force-toggle__label">
+								<input type="checkbox" name="force_google" value="1" <?php checked( $force_override ); ?> />
+								<span>
+									<?php esc_html_e( 'Force-enable Google Drive even if another plugin bundles an older google/apiclient.', 'wpmudev-plugin-test' ); ?>
+								</span>
+							</label>
+
+							<p class="dashboard-force-toggle__helper">
+								<?php
+								echo esc_html__(
+									'Only use this override when you are aware of the risks. Leave it disabled to rely on automatic compatibility checks.',
+									'wpmudev-plugin-test'
+								);
+								?>
+							</p>
+
+							<?php if ( $forced_active ) : ?>
+								<p class="dashboard-force-toggle__status dashboard-force-toggle__status--warning">
+									<?php
+									echo esc_html__(
+										'Override is currently active. Google Drive tooling will load even if another plugin ships an outdated client.',
+										'wpmudev-plugin-test'
+									);
+									?>
+								</p>
+							<?php endif; ?>
+
+							<button type="submit" class="dashboard-button dashboard-button--ghost">
+								<?php esc_html_e( 'Save override preference', 'wpmudev-plugin-test' ); ?>
+							</button>
+						</form>
 					</article>
 
 					<article class="dashboard-card">
@@ -255,6 +308,16 @@ class Dashboard extends Base {
 				border-color: rgba(239, 68, 68, 0.4);
 			}
 
+			.dashboard-notice--success {
+				background: rgba(167, 243, 208, 0.25);
+				border-color: rgba(16, 185, 129, 0.38);
+			}
+
+			.dashboard-notice--neutral {
+				background: rgba(226, 232, 240, 0.4);
+				border-color: rgba(148, 163, 184, 0.32);
+			}
+
 			.dashboard-grid {
 				display: flex;
 				flex-direction: column;
@@ -335,6 +398,12 @@ class Dashboard extends Base {
 				border-color: rgba(148, 163, 184, 0.32);
 			}
 
+			.dashboard-button--ghost {
+				background: transparent;
+				color: #1d4ed8;
+				border-color: rgba(37, 99, 235, 0.3);
+			}
+
 			.dashboard-button:hover {
 				transform: translateY(-1px);
 				box-shadow: 0 20px 40px rgba(37, 99, 235, 0.22);
@@ -383,6 +452,45 @@ class Dashboard extends Base {
 				font-size: 12px;
 			}
 
+			.dashboard-force-toggle {
+				display: flex;
+				flex-direction: column;
+				gap: 12px;
+				padding: 16px 18px;
+				border-radius: 18px;
+				border: 1px dashed rgba(148, 163, 184, 0.32);
+				background: rgba(248, 250, 252, 0.72);
+			}
+
+			.dashboard-force-toggle__label {
+				display: flex;
+				align-items: flex-start;
+				gap: 10px;
+				font-size: 13px;
+				font-weight: 600;
+				color: #1f2937;
+			}
+
+			.dashboard-force-toggle__label input[type="checkbox"] {
+				margin-top: 3px;
+			}
+
+			.dashboard-force-toggle__helper {
+				margin: 0;
+				font-size: 12px;
+				color: #64748b;
+			}
+
+			.dashboard-force-toggle__status {
+				margin: 0;
+				font-size: 12px;
+				font-weight: 600;
+			}
+
+			.dashboard-force-toggle__status--warning {
+				color: #b45309;
+			}
+
 			@media (max-width: 782px) {
 				.dashboard-shell {
 					padding-inline: 18px;
@@ -395,5 +503,30 @@ class Dashboard extends Base {
 			}
 		</style>
 		<?php
+	}
+
+	/**
+	 * Handle compatibility override toggle submission.
+	 */
+	public function handle_force_google_request() {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_die( esc_html__( 'You do not have permission to manage this setting.', 'wpmudev-plugin-test' ) );
+		}
+
+		check_admin_referer( 'wpmudev_plugintest_force_google', 'wpmudev_plugintest_force_google_nonce' );
+
+		$force_enabled = isset( $_POST['force_google'] ) && '1' === sanitize_text_field( wp_unslash( $_POST['force_google'] ) );
+
+		if ( $force_enabled ) {
+			update_option( 'wpmudev_plugin_test_force_google_client', 1, false );
+		} else {
+			delete_option( 'wpmudev_plugin_test_force_google_client' );
+		}
+
+		$redirect = admin_url( 'admin.php?page=' . WPMUDEV_PLUGINTEST_MENU_SLUG );
+		$redirect = add_query_arg( 'force-updated', $force_enabled ? '1' : '0', $redirect );
+
+		wp_safe_redirect( $redirect );
+		exit;
 	}
 }

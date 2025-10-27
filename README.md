@@ -25,6 +25,7 @@ Install npm packages
 Before creating a distributable zip, run `composer install --no-dev && npm run compile` so the `vendor/` autoloader and compiled assets are up to date.
 
 `npm run build` now copies only the runtime code (PHP in `app/` + `core/`, compiled assets in `assets/`, translations, and Composer dependencies) while explicitly excluding `node_modules/`, raw `src/` sources, and tests.  
+Quality-tooling Composer packages (`wp-coding-standards`, `phpcompatibility`, `squizlabs/php_codesniffer`, etc.) are also skipped so they no longer bloat the distributable archive.  
 This keeps deployments lean without sacrificing any required functionality or third-party libraries (the Google API client still ships from `vendor/`).
 
 ## Features
@@ -53,6 +54,15 @@ Progress is streamed to the terminal and the command exits with a full summary.
 ## Dependency Guard
 
 Some sites already load `google/apiclient`. We now detect the version that is active and pause our Google Drive features if a conflicting (< 2.15) build is found. An admin notice explains the situation so the site owner can upgrade the other plugin/theme. This avoids fatal errors while keeping Posts Maintenance fully operational.
+
+### Forcing Google Client Support (advanced)
+
+If you understand the risks and still want to run with an older Google client, flip the override flag in WordPress:
+
+- Add `define( 'WPMUDEV_PLUGINTEST_FORCE_GOOGLE_CLIENT', true );` to `wp-config.php`, **or**
+- Run `wp option update wpmudev_plugin_test_force_google_client 1` to toggle it at runtime.
+
+Either approach (or the `wpmudev_plugin_test/google_client_force_enable` filter) will re-enable Drive tools while still surfacing a warning banner so you know an unsupported library is in play.
 
 ## Google Drive Configuration
 
