@@ -1,18 +1,34 @@
 import {
-    createRoot,
-    render,
-    StrictMode,
-    useEffect,
-    useMemo,
-    useRef,
-    useState,
-    createInterpolateElement,
-} from '@wordpress/element';
-import { Button, TextControl, SelectControl, Spinner, Notice } from '@wordpress/components';
-import apiFetch, { createNonceMiddleware } from '@wordpress/api-fetch';
-import { __, sprintf } from '@wordpress/i18n';
+	createRoot,
+	render,
+	StrictMode,
+	useEffect,
+	useMemo,
+	useRef,
+	useState,
+	createInterpolateElement,
+} from "@wordpress/element";
+import apiFetch, { createNonceMiddleware } from "@wordpress/api-fetch";
+import { __, sprintf } from "@wordpress/i18n";
 
-import './scss/style.scss';
+import {
+	Alert,
+	Badge,
+	Button,
+	Card,
+	CardContent,
+	CardDescription,
+	CardFooter,
+	CardHeader,
+	CardTitle,
+	FormField,
+	Input,
+	Select,
+	Spinner,
+} from "../ui";
+
+import "../styles/shadcn.scss";
+import "./scss/style.scss";
 
 const driveConfig = window.wpmudevDriveTest || {};
 
@@ -74,11 +90,25 @@ const formatBytes = ( bytes ) => {
 
 const getDefaultNotice = () => ( { message: '', type: '' } );
 
-const StatusBadge = ( { tone = 'neutral', children } ) => (
-    <span className={ `drive-status-badge drive-status-badge--${ tone }` }>
-        { children }
-    </span>
-);
+const formatScopeLabel = ( scope = '' ) => scope.replace( 'https://www.googleapis.com/auth/', '' );
+
+const StatusBadge = ( { tone = "accent", children } ) => {
+	const toneMap = {
+		success: "success",
+		warning: "warning",
+		error: "warning",
+		muted: "accent",
+		neutral: "accent",
+	};
+
+	const resolvedTone = toneMap[ tone ] || "accent";
+
+	return (
+		<Badge tone={ resolvedTone } className="drive-status-badge">
+			{ children }
+		</Badge>
+	);
+};
 
 const DrivePage = () => {
     const [ hasCredentials, setHasCredentials ] = useState( Boolean( driveConfig.hasCredentials ) );
@@ -491,11 +521,20 @@ useEffect( () => {
         }
     };
 
-    const handleSelectFile = () => {
-        if ( fileInputRef.current ) {
-            fileInputRef.current.click();
-        }
-    };
+	const handleSelectFile = () => {
+		if ( fileInputRef.current ) {
+			fileInputRef.current.click();
+		}
+	};
+
+	const handleChooseButtonClick = ( event ) => {
+		event.stopPropagation();
+		handleSelectFile();
+	};
+
+	const handleInputClick = ( event ) => {
+		event.stopPropagation();
+	};
 
     const handleFileInputChange = ( event ) => {
         const file = event.target.files?.[ 0 ];
@@ -668,11 +707,11 @@ const handleDragLeave = ( event ) => {
         }
     };
 
-    const handleCreateFolder = async () => {
-        if ( ! folderName.trim() ) {
-            showNotice( __( 'Folder name cannot be empty.', 'wpmudev-plugin-test' ), 'error' );
-            return;
-        }
+	const handleCreateFolder = async () => {
+		if ( ! folderName.trim() ) {
+			showNotice( __( 'Folder name cannot be empty.', 'wpmudev-plugin-test' ), 'error' );
+			return;
+		}
 
         setCreatingFolder( true );
         try {
@@ -693,11 +732,21 @@ const handleDragLeave = ( event ) => {
             setFolderName( '' );
             loadFiles( { append: false, folderId: currentFolder?.id || '', search: searchTerm.trim(), order: sortOrder } );
         } catch ( error ) {
-            showNotice( error?.message || __( 'Unable to create folder.', 'wpmudev-plugin-test' ), 'error' );
-        } finally {
-            setCreatingFolder( false );
-        }
-    };
+			showNotice( error?.message || __( 'Unable to create folder.', 'wpmudev-plugin-test' ), 'error' );
+		} finally {
+			setCreatingFolder( false );
+		}
+	};
+
+	const handleRefreshFiles = () => {
+		resetRenameState();
+		loadFiles( {
+			append: false,
+			folderId: currentFolder?.id || '',
+			search: searchTerm.trim(),
+			order: sortOrder,
+		} );
+	};
 
     const resetRenameState = () => {
         setRenameTarget( null );
@@ -811,12 +860,20 @@ const handleDragLeave = ( event ) => {
         }
     };
 
-    const handleLoadMore = () => {
-        if ( nextPageToken ) {
-            setOpenMenuId( null );
-        loadFiles( { append: true, pageToken: nextPageToken, folderId: currentFolder?.id || '', search: searchTerm.trim(), order: sortOrder } );
-        }
-    };
+	const handleLoadMore = () => {
+		if ( ! nextPageToken ) {
+			return;
+		}
+
+		setOpenMenuId( null );
+		loadFiles( {
+			append: true,
+			pageToken: nextPageToken,
+			folderId: currentFolder?.id || '',
+			search: searchTerm.trim(),
+			order: sortOrder,
+		} );
+	};
 
     const handleSearchSubmit = () => {
         const trimmed = searchTerm.trim();
@@ -906,53 +963,347 @@ const handleDragLeave = ( event ) => {
         );
     };
 
-    const renderDriveActions = () => {
-        const heading = isAuthenticated
-            ? __( 'Manage Google Drive Connection', 'wpmudev-plugin-test' )
-            : __( 'Connect to Google Drive', 'wpmudev-plugin-test' );
-        const description = isAuthenticated
-            ? __( 'Your Google account is connected. Revoke access to disconnect this site or re-authenticate if needed.', 'wpmudev-plugin-test' )
-            : __( 'Authenticate with your Google account to unlock uploads, folder creation, and live browsing of Drive files.', 'wpmudev-plugin-test' );
-        const authLabel = authInProgress
-            ? __( 'Redirecting…', 'wpmudev-plugin-test' )
-            : ( isAuthenticated
-                ? __( 'Re-authenticate with Google Drive', 'wpmudev-plugin-test' )
-                : __( 'Authenticate with Google Drive', 'wpmudev-plugin-test' ) );
+	const renderDriveActions = () => {
+		const heading = isAuthenticated
+			? __( "Manage Google Drive Connection", "wpmudev-plugin-test" )
+			: __( "Connect to Google Drive", "wpmudev-plugin-test" );
+		const description = isAuthenticated
+			? __(
+					"Your Google account is connected. Revoke access to disconnect this site or re-authenticate if needed.",
+					"wpmudev-plugin-test"
+			  )
+			: __(
+					"Authenticate with your Google account to unlock uploads, folder creation, and live browsing of Drive files.",
+					"wpmudev-plugin-test"
+			  );
+		const authLabel = authInProgress
+			? __( "Redirecting…", "wpmudev-plugin-test" )
+			: (
+				isAuthenticated
+					? __( "Re-authenticate with Google Drive", "wpmudev-plugin-test" )
+					: __( "Authenticate with Google Drive", "wpmudev-plugin-test" )
+			);
 
-        return (
-            <div className="drive-card drive-card--auth sui-box">
-                <div className="sui-box-header">
-                    <h2 className="sui-box-title">{ heading }</h2>
-                </div>
-                <div className="sui-box-body">
-                    <p className="drive-card__description">
-                        { description }
-                    </p>
-                    <div className="drive-card__actions" style={ { display: 'flex', gap: '0.75rem', flexWrap: 'wrap' } }>
-                        <Button
-                            variant="primary"
-                            onClick={ handleAuth }
-                            isBusy={ authInProgress }
-                            disabled={ authInProgress || revokingAuth }
-                        >
-                            { authLabel }
-                        </Button>
-                        { isAuthenticated && (
-                            <Button
-                                variant="secondary"
-                                onClick={ handleRevokeAuth }
-                                isBusy={ revokingAuth }
-                                disabled={ revokingAuth || authInProgress }
-                                isDestructive
-                            >
-                                { revokingAuth ? __( 'Revoking…', 'wpmudev-plugin-test' ) : __( 'Revoke Google Drive Access', 'wpmudev-plugin-test' ) }
-                            </Button>
-                        ) }
-                    </div>
-                </div>
-            </div>
-        );
-    };
+		return (
+			<Card className="drive-card drive-card--auth" elevated>
+				<CardHeader>
+					<CardTitle>{ heading }</CardTitle>
+					<CardDescription>{ description }</CardDescription>
+				</CardHeader>
+				<CardContent className="drive-card__content drive-card__content--actions">
+					<div className="drive-card__actions">
+						<Button
+							variant="primary"
+							onClick={ handleAuth }
+							isLoading={ authInProgress }
+							disabled={ authInProgress || revokingAuth }
+						>
+							{ authLabel }
+						</Button>
+						{ isAuthenticated && (
+							<Button
+								variant="destructive"
+								onClick={ handleRevokeAuth }
+								isLoading={ revokingAuth }
+								disabled={ revokingAuth || authInProgress }
+							>
+								{ revokingAuth
+									? __( "Revoking…", "wpmudev-plugin-test" )
+									: __( "Revoke Google Drive Access", "wpmudev-plugin-test" ) }
+							</Button>
+						) }
+					</div>
+					<p className="drive-card__hint">
+						{ __( "You’ll be redirected to Google for OAuth approval. Upon success, the page refreshes automatically.", "wpmudev-plugin-test" ) }
+					</p>
+				</CardContent>
+			</Card>
+		);
+	};
+
+	const renderCredentialsPanel = () => {
+		const scopeChips = (
+			<div className="drive-card__scopes">
+				{ scopes.map( ( scope ) => (
+					<span className="drive-chip" key={ scope }>
+						{ formatScopeLabel( scope ) }
+					</span>
+				) ) }
+			</div>
+		);
+
+		const cardDescription = createInterpolateElement(
+			__(
+				"Generate OAuth credentials inside the <a>Google Cloud Console</a>, then store them here to enable Drive tools.",
+				"wpmudev-plugin-test"
+			),
+			{
+				a: (
+					<a
+						href="https://console.cloud.google.com/apis/credentials"
+						target="_blank"
+						rel="noreferrer"
+					/>
+				),
+			}
+		);
+
+		const clientIdHelp = createInterpolateElement(
+			__(
+				"Copy the OAuth Client ID from <a>Google Cloud Console</a> after enabling the Drive API.",
+				"wpmudev-plugin-test"
+			),
+			{
+				a: (
+					<a
+						href="https://console.cloud.google.com/apis/credentials"
+						target="_blank"
+						rel="noreferrer"
+					/>
+				),
+			}
+		);
+
+		const clientSecretHelp = createInterpolateElement(
+			__(
+				"Paste the matching Client Secret from your Google OAuth credentials screen.",
+				"wpmudev-plugin-test"
+			),
+			{
+				a: (
+					<a
+						href="https://console.cloud.google.com/apis/credentials"
+						target="_blank"
+						rel="noreferrer"
+					/>
+				),
+			}
+		);
+
+		return (
+			<Card className="drive-card drive-card--credentials" elevated>
+				<CardHeader className="drive-card__header">
+					<div>
+						<CardTitle>{ __( "Google API Credentials", "wpmudev-plugin-test" ) }</CardTitle>
+						<CardDescription>{ cardDescription }</CardDescription>
+					</div>
+					{ hasCredentials && (
+						<Button
+							variant="ghost"
+							size="sm"
+							onClick={ () => setShowCredentials( ( prev ) => ! prev ) }
+						>
+							{ showCredentials
+								? __( "Collapse form", "wpmudev-plugin-test" )
+								: __( "Edit credentials", "wpmudev-plugin-test" ) }
+						</Button>
+					) }
+				</CardHeader>
+
+				{ showCredentials ? (
+					<>
+						<CardContent className="drive-card__content drive-card__content--form">
+							<FormField
+								label={ __( "Client ID", "wpmudev-plugin-test" ) }
+								labelFor="drive-client-id"
+								description={ clientIdHelp }
+							>
+								<Input
+									id="drive-client-id"
+									value={ credentials.clientId }
+									onChange={ ( event ) => handleFieldChange( "clientId", event.target.value ) }
+									placeholder="XXXXXXXXXXXXXXXXXX.apps.googleusercontent.com"
+									autoComplete="off"
+								/>
+							</FormField>
+							<FormField
+								label={ __( "Client Secret", "wpmudev-plugin-test" ) }
+								labelFor="drive-client-secret"
+								description={ clientSecretHelp }
+							>
+								<Input
+									id="drive-client-secret"
+									type="password"
+									value={ credentials.clientSecret }
+									onChange={ ( event ) => handleFieldChange( "clientSecret", event.target.value ) }
+									autoComplete="off"
+								/>
+							</FormField>
+						</CardContent>
+						<CardFooter className="drive-card__footer">
+							<div className="drive-card__footer-meta">
+								<span className="drive-card__footer-label">
+									{ __( "OAuth scopes", "wpmudev-plugin-test" ) }
+								</span>
+								{ scopeChips }
+							</div>
+							<Button
+								variant="primary"
+								onClick={ handleSaveCredentials }
+								isLoading={ savingCredentials }
+								disabled={ savingCredentials }
+							>
+								{ savingCredentials
+									? __( "Saving…", "wpmudev-plugin-test" )
+									: __( "Save Credentials", "wpmudev-plugin-test" ) }
+							</Button>
+						</CardFooter>
+					</>
+				) : (
+					<CardContent className="drive-card__content drive-card__content--summary">
+						<p className="drive-card__description">
+							{ __(
+								"Credentials stored securely. Re-open the form above whenever you rotate keys or need to verify them.",
+								"wpmudev-plugin-test"
+							) }
+						</p>
+						{ scopeChips }
+					</CardContent>
+				) }
+			</Card>
+		);
+	};
+
+	const renderUploadPanel = () => (
+		<Card className="drive-card drive-card--upload" elevated>
+			<CardHeader>
+				<CardTitle>{ __( "Upload to Drive", "wpmudev-plugin-test" ) }</CardTitle>
+				<CardDescription>
+					{ __( "Drag & drop a file or browse your device. Files land in the folder you’re currently viewing.", "wpmudev-plugin-test" ) }
+				</CardDescription>
+			</CardHeader>
+			<CardContent className="drive-card__content drive-card__content--upload">
+				<div
+					role="button"
+					tabIndex={ 0 }
+					className={ [
+						"drive-upload-dropzone",
+						isDraggingOver && "is-dragging",
+						uploadFile && "has-file",
+					].filter( Boolean ).join( " " ) }
+					onClick={ handleSelectFile }
+					onDragOver={ handleDragOver }
+					onDragLeave={ handleDragLeave }
+					onDrop={ handleDrop }
+					onKeyDown={ handleDropzoneKeyDown }
+				>
+					<div className="drive-upload-dropzone__inner">
+						<div className="drive-upload-dropzone__icon" aria-hidden="true">
+							<span>📤</span>
+						</div>
+						<strong className="drive-upload-dropzone__title">
+							{ __( "Drop files or browse", "wpmudev-plugin-test" ) }
+						</strong>
+						<p className="drive-upload-dropzone__helper">
+							{ __( "Accepted formats match your Drive allowlist. Upload limit:", "wpmudev-plugin-test" ) } { uploadLimitLabel }
+						</p>
+						<Button variant="secondary" size="sm" onClick={ handleChooseButtonClick }>
+							{ __( "Choose a file", "wpmudev-plugin-test" ) }
+						</Button>
+					</div>
+					<input
+						key={ fileInputKey }
+						ref={ fileInputRef }
+						className="drive-upload-input"
+						type="file"
+						onClick={ handleInputClick }
+						onChange={ handleFileInputChange }
+						aria-hidden="true"
+						tabIndex={ -1 }
+					/>
+				</div>
+
+				{ uploadFile && (
+					<div className="drive-upload-selection">
+						<div>
+							<strong>{ uploadFile.name }</strong>
+							<p>
+								{ sprintf(
+									__( "Size: %s", "wpmudev-plugin-test" ),
+									formatBytes( uploadFile.size )
+								) }
+							</p>
+						</div>
+						<Button variant="link" size="sm" onClick={ handleClearSelectedFile }>
+							{ __( "Clear selection", "wpmudev-plugin-test" ) }
+						</Button>
+					</div>
+				) }
+
+				{ typeof uploadProgress === "number" && (
+					<div className="drive-upload-progress">
+						<span>{ sprintf( __( "Uploading… %d%%", "wpmudev-plugin-test" ), uploadProgress ) }</span>
+					</div>
+				) }
+			</CardContent>
+			<CardFooter className="drive-card__footer">
+				<div className="drive-card__footer-meta">
+					<span className="drive-card__footer-label">
+						{ __( "Destination folder", "wpmudev-plugin-test" ) }
+					</span>
+					<div className="drive-card__breadcrumbs">
+						{ folderStack.map( ( crumb, index ) => (
+							<span key={ crumb.id || `crumb-${ index }` }>{ crumb.name }</span>
+						) ) }
+					</div>
+				</div>
+				<Button
+					variant="primary"
+					onClick={ handleUpload }
+					isLoading={ uploading }
+					disabled={ uploading || ! uploadFile }
+				>
+					{ uploading
+						? __( "Uploading…", "wpmudev-plugin-test" )
+						: __( "Upload to Drive", "wpmudev-plugin-test" ) }
+				</Button>
+			</CardFooter>
+		</Card>
+	);
+
+	const renderFolderPanel = () => (
+		<Card className="drive-card drive-card--folder" elevated>
+			<CardHeader>
+				<CardTitle>{ __( "Create New Folder", "wpmudev-plugin-test" ) }</CardTitle>
+				<CardDescription>
+					{ __( "Spin up a folder inside your active Drive location and instantly refresh the listing below.", "wpmudev-plugin-test" ) }
+				</CardDescription>
+			</CardHeader>
+			<CardContent className="drive-card__content drive-card__content--form">
+				<FormField
+					label={ __( "Folder name", "wpmudev-plugin-test" ) }
+					labelFor="drive-folder-name"
+				>
+					<Input
+						id="drive-folder-name"
+						value={ folderName }
+						onChange={ ( event ) => setFolderName( event.target.value ) }
+						placeholder={ __( "Marketing uploads", "wpmudev-plugin-test" ) }
+					/>
+				</FormField>
+			</CardContent>
+			<CardFooter className="drive-card__footer drive-card__footer--compact">
+				<div className="drive-card__footer-meta">
+					<span className="drive-card__footer-label">
+						{ __( "Parent folder", "wpmudev-plugin-test" ) }
+					</span>
+					<div className="drive-card__breadcrumbs">
+						{ currentFolder?.name || __( "My Drive", "wpmudev-plugin-test" ) }
+					</div>
+				</div>
+				<Button
+					variant="secondary"
+					onClick={ handleCreateFolder }
+					isLoading={ creatingFolder }
+					disabled={ creatingFolder || ! folderName.trim() }
+				>
+					{ creatingFolder
+						? __( "Creating…", "wpmudev-plugin-test" )
+						: __( "Create Folder", "wpmudev-plugin-test" ) }
+				</Button>
+			</CardFooter>
+		</Card>
+	);
 
     const renderFiles = () => {
         const breadcrumbItems = folderStack;
@@ -981,46 +1332,47 @@ const handleDragLeave = ( event ) => {
                         { folderStack.length > 1 && (
                             <Button
                                 variant="secondary"
-                                size="small"
+                                size="sm"
                                 onClick={ () => handleBreadcrumbClick( folderStack.length - 2 ) }
                             >
                                 { __( 'Up One Level', 'wpmudev-plugin-test' ) }
                             </Button>
                         ) }
-                        <div className="drive-files-toolbar__sort">
-                            <SelectControl
-                                label={ __( 'Sort files', 'wpmudev-plugin-test' ) }
-                                hideLabelFromVision
-                                value={ sortOrder }
-                                onChange={ ( value ) => setSortOrder( value ) }
-                                options={ [
-                                    { label: __( 'Latest first', 'wpmudev-plugin-test' ), value: 'desc' },
-                                    { label: __( 'Oldest first', 'wpmudev-plugin-test' ), value: 'asc' },
-                                ] }
-                            />
+						<div className="drive-files-toolbar__sort">
+							<span className="drive-sort-label">{ __( 'Sort by', 'wpmudev-plugin-test' ) }</span>
+							<Select
+								id="drive-sort-order"
+								className="drive-sort-select"
+								value={ sortOrder }
+								onChange={ ( event ) => setSortOrder( event.target.value ) }
+							>
+								<option value="desc">{ __( 'Latest first', 'wpmudev-plugin-test' ) }</option>
+								<option value="asc">{ __( 'Oldest first', 'wpmudev-plugin-test' ) }</option>
+							</Select>
                         </div>
                         <div className="drive-files-toolbar__search">
-                            <TextControl
+                            <Input
                                 value={ searchTerm }
-                                onChange={ ( value ) => {
+                                onChange={ ( event ) => {
                                     setOpenMenuId( null );
-                                    setSearchTerm( value );
+                                    setSearchTerm( event.target.value );
                                 } }
                                 onKeyDown={ handleSearchKeyDown }
                                 placeholder={ __( 'Search this folder', 'wpmudev-plugin-test' ) }
-                                label={ __( 'Search Drive', 'wpmudev-plugin-test' ) }
-                                hideLabelFromVision
+                                aria-label={ __( 'Search Drive', 'wpmudev-plugin-test' ) }
                             />
                             <Button
                                 variant="secondary"
+                                size="sm"
                                 onClick={ handleSearchSubmit }
-                                isBusy={ filesLoading && searchActive }
+                                isLoading={ filesLoading && searchActive }
                             >
                                 { __( 'Search', 'wpmudev-plugin-test' ) }
                             </Button>
                             { searchTerm && (
                                 <Button
                                     variant="link"
+                                    size="sm"
                                     className="drive-files-toolbar__clear"
                                     onClick={ () => {
                                         skipNextSearchRef.current = true;
@@ -1081,18 +1433,18 @@ const handleDragLeave = ( event ) => {
                                             <span className="drive-file-card__badge">
                                                 { isFolder ? __( 'Folder', 'wpmudev-plugin-test' ) : __( 'File', 'wpmudev-plugin-test' ) }
                                             </span>
-                                              <button
-                            type="button"
-                            className="drive-file-card__menu-trigger"
-                            aria-expanded={ openMenuId === file.id }
-                            aria-label={ __( 'File actions', 'wpmudev-plugin-test' ) }
-                            onClick={ ( event ) => handleMenuToggle( event, file.id ) }
-                        >
-                            <span />
-                            <span />
-                            <span />
-                        </button>
-                    </div>
+                                            <button
+                                                type="button"
+                                                className="drive-file-card__menu-trigger"
+                                                aria-expanded={ openMenuId === file.id }
+                                                aria-label={ __( 'File actions', 'wpmudev-plugin-test' ) }
+                                                onClick={ ( event ) => handleMenuToggle( event, file.id ) }
+                                            >
+                                                <span aria-hidden="true" />
+                                                <span aria-hidden="true" />
+                                                <span aria-hidden="true" />
+                                            </button>
+                                        </div>
 
                     { openMenuId === file.id && (
                         <div
@@ -1162,28 +1514,28 @@ const handleDragLeave = ( event ) => {
 
                     <div className="drive-file-card__meta">
                         { isRenaming ? (
-                                                <div className="drive-file-card__rename">
-                                                    <TextControl
-                                                        label={ __( 'Rename item', 'wpmudev-plugin-test' ) }
-                                                        hideLabelFromVision
-                                                        value={ renameValue }
-                                                        onChange={ setRenameValue }
-                                                        autoFocus
-                                                    />
-                                                    <div className="drive-file-card__rename-actions">
-                                                        <Button
-                                                            variant="primary"
-                                                            onClick={ () => handleRenameSubmit( file.id ) }
-                                                            isBusy={ renaming }
-                                                        >
-                                                            { __( 'Save', 'wpmudev-plugin-test' ) }
-                                                        </Button>
-                                                        <Button variant="link" onClick={ handleRenameCancel }>
-                                                            { __( 'Cancel', 'wpmudev-plugin-test' ) }
-                                                        </Button>
-                                                    </div>
-                                                </div>
-                                            ) : (
+												<div className="drive-file-card__rename">
+													<Input
+														value={ renameValue }
+														onChange={ ( event ) => setRenameValue( event.target.value ) }
+														autoFocus
+														aria-label={ __( 'Rename item', 'wpmudev-plugin-test' ) }
+													/>
+													<div className="drive-file-card__rename-actions">
+														<Button
+															variant="primary"
+															size="sm"
+															onClick={ () => handleRenameSubmit( file.id ) }
+															isLoading={ renaming }
+														>
+															{ __( 'Save', 'wpmudev-plugin-test' ) }
+														</Button>
+														<Button variant="link" size="sm" onClick={ handleRenameCancel }>
+															{ __( 'Cancel', 'wpmudev-plugin-test' ) }
+														</Button>
+													</div>
+												</div>
+											) : (
                                                 <>
                                                     <h3 className="drive-file-card__name">{ file.name }</h3>
                                                     <p className="drive-file-card__details">
@@ -1200,7 +1552,7 @@ const handleDragLeave = ( event ) => {
                         </div>
                         { nextPageToken && (
                             <div className="drive-files-more">
-                                <Button variant="secondary" onClick={ handleLoadMore } isBusy={ filesLoading }>
+                                <Button variant="secondary" onClick={ handleLoadMore } isLoading={ filesLoading }>
                                     { __( 'Load More Files', 'wpmudev-plugin-test' ) }
                                 </Button>
                             </div>
@@ -1217,288 +1569,133 @@ const handleDragLeave = ( event ) => {
 	const pageDescription = isManageView
 		? __( 'Upload files, browse folders, and manage Drive content directly from WordPress.', 'wpmudev-plugin-test' )
 		: __( 'Manage Google Drive credentials, authenticate, and test Drive file operations.', 'wpmudev-plugin-test' );
+	const heroEyebrow = isManageView
+		? __( 'Drive workspace', 'wpmudev-plugin-test' )
+		: __( 'Drive integration', 'wpmudev-plugin-test' );
+	const noticeVariant = notice.type === 'error'
+		? 'error'
+		: ( notice.type === 'warning' ? 'info' : 'success' );
+	const noticeTitle = notice.type === 'error'
+		? __( 'Something went wrong', 'wpmudev-plugin-test' )
+		: notice.type === 'warning'
+			? __( 'Heads up', 'wpmudev-plugin-test' )
+			: __( 'Success', 'wpmudev-plugin-test' );
 
-    return (
-        <div className="drive-page">
-            <header className="drive-page__header sui-header">
-                <div className="drive-page__header-text">
-                    <h1 className="sui-header-title">{ pageTitle }</h1>
-                    <p className="sui-description">
-                        { pageDescription }
-                    </p>
-                </div>
-                <div className="drive-page__header-status">
-                    <StatusBadge tone={ connectionSummary.tone }>
-                        { isAuthenticated ? __( 'Active', 'wpmudev-plugin-test' ) : __( 'Needs setup', 'wpmudev-plugin-test' ) }
-                    </StatusBadge>
-                    <h2 className="drive-page__status-title">{ connectionSummary.title }</h2>
-                    <p className="drive-page__status-text">{ connectionSummary.description }</p>
-                </div>
-            </header>
 
-            { isSettingsView && (
-                <div className="drive-page__summary">
-                    { statusCards.map( ( card ) => (
-                        <div key={ card.id } className={ `drive-summary-card drive-summary-card--${ card.tone }` }>
-                            <span className="drive-summary-card__label">{ card.label }</span>
-                            <strong className="drive-summary-card__value">{ card.value }</strong>
-                            <p className="drive-summary-card__helper">{ card.helper }</p>
-                        </div>
-                    ) ) }
-                </div>
-            ) }
+	return (
+		<div className="shadcn-admin drive-admin">
+			<div className="drive-shell">
+				<header className="drive-hero">
+					<div className="drive-hero__copy">
+						<span className="drive-hero__eyebrow">{ heroEyebrow }</span>
+						<h1>{ pageTitle }</h1>
+						<p>{ pageDescription }</p>
+						<div className="drive-hero__status">
+							<StatusBadge tone={ connectionSummary.tone }>
+								{ isAuthenticated ? __( 'Connected', 'wpmudev-plugin-test' ) : __( 'Needs setup', 'wpmudev-plugin-test' ) }
+							</StatusBadge>
+							<div className="drive-hero__status-text">
+								<strong>{ connectionSummary.title }</strong>
+								<span>{ connectionSummary.description }</span>
+							</div>
+						</div>
+					</div>
+					<Card className="drive-hero__card" elevated>
+						<CardHeader>
+							<CardTitle>{ __( 'Connection overview', 'wpmudev-plugin-test' ) }</CardTitle>
+							<CardDescription>{ __( 'Quick stats to confirm your Drive handshake is healthy.', 'wpmudev-plugin-test' ) }</CardDescription>
+						</CardHeader>
+						<CardContent>
+							<dl className="shadcn-key-value drive-hero__stats">
+								<div>
+									<dt>{ __( 'Authentication', 'wpmudev-plugin-test' ) }</dt>
+									<dd>{ isAuthenticated ? __( 'Active', 'wpmudev-plugin-test' ) : __( 'Pending', 'wpmudev-plugin-test' ) }</dd>
+								</div>
+								<div>
+									<dt>{ __( 'Stored credentials', 'wpmudev-plugin-test' ) }</dt>
+									<dd>{ hasCredentials ? __( 'Available', 'wpmudev-plugin-test' ) : __( 'Missing', 'wpmudev-plugin-test' ) }</dd>
+								</div>
+								<div>
+									<dt>{ __( 'Upload limit', 'wpmudev-plugin-test' ) }</dt>
+									<dd>{ uploadLimitLabel }</dd>
+								</div>
+								<div>
+									<dt>{ __( 'Scopes requested', 'wpmudev-plugin-test' ) }</dt>
+									<dd>{ scopes.length }</dd>
+								</div>
+							</dl>
+						</CardContent>
+					</Card>
+				</header>
 
-            { notice.message && (
-                <Notice status={ notice.type } isDismissible onRemove={ clearNotice }>
-                    { notice.message }
-                </Notice>
-            ) }
+				{ notice.message && (
+					<Alert
+						variant={ noticeVariant }
+						title={ noticeTitle }
+						description={ notice.message }
+						className="drive-alert"
+					>
+						<Button variant="link" size="sm" onClick={ clearNotice }>
+							{ __( 'Dismiss', 'wpmudev-plugin-test' ) }
+						</Button>
+					</Alert>
+				) }
 
-            { isSettingsView && (
-                <div className="drive-page__grid drive-page__grid--primary">
-                    <section className="drive-card drive-card--credentials sui-box">
-                        <div className="sui-box-header">
-                        <h2 className="sui-box-title">{ __( 'Google API Credentials', 'wpmudev-plugin-test' ) }</h2>
-                        <div className="sui-actions-right">
-                            { hasCredentials && (
-                                <Button
-                                    variant="secondary"
-                                    className="drive-toggle-button"
-                                    onClick={ () => setShowCredentials( ( prev ) => ! prev ) }
-                                >
-                                    { showCredentials
-                                        ? __( 'Hide form', 'wpmudev-plugin-test' )
-                                        : __( 'Edit credentials', 'wpmudev-plugin-test' ) }
-                                </Button>
-                            ) }
-                        </div>
-                    </div>
-                    { showCredentials ? (
-                        <>
-                            <div className="sui-box-body">
-                                <div className="sui-box-settings-row">
-                                    <TextControl
-                                        label={ __( 'Client ID', 'wpmudev-plugin-test' ) }
-                                        help={
-                                            createInterpolateElement(
-                                                __( 'Retrieve the Client ID in the <a>Google Cloud Console</a>. Enable the Google Drive API for your project.', 'wpmudev-plugin-test' ),
-                                                {
-                                                    a: <a href="https://console.cloud.google.com/apis/credentials" target="_blank" rel="noreferrer" />,
-                                                }
-                                            )
-                                        }
-                                        value={ credentials.clientId }
-                                        onChange={ ( value ) => handleFieldChange( 'clientId', value ) }
-                                    />
-                                </div>
-                                <div className="sui-box-settings-row">
-                                    <TextControl
-                                        type="password"
-                                        label={ __( 'Client Secret', 'wpmudev-plugin-test' ) }
-                                        help={
-                                            createInterpolateElement(
-                                                __( 'Retrieve the Client Secret alongside your OAuth credentials in <a>Google Cloud Console</a>.', 'wpmudev-plugin-test' ),
-                                                {
-                                                    a: <a href="https://console.cloud.google.com/apis/credentials" target="_blank" rel="noreferrer" />,
-                                                }
-                                            )
-                                        }
-                                        value={ credentials.clientSecret }
-                                        onChange={ ( value ) => handleFieldChange( 'clientSecret', value ) }
-                                    />
-                                </div>
-                            </div>
-                            <div className="sui-box-footer">
-                                <div className="sui-actions-right">
-                                    <Button
-                                        variant="primary"
-                                        onClick={ handleSaveCredentials }
-                                        isBusy={ savingCredentials }
-                                        disabled={ savingCredentials }
-                                    >
-                                        { savingCredentials ? __( 'Saving…', 'wpmudev-plugin-test' ) : __( 'Save Credentials', 'wpmudev-plugin-test' ) }
-                                    </Button>
-                                </div>
-                            </div>
-                        </>
-                    ) : (
-                        <div className="sui-box-body">
-                            <p>{ __( 'Credentials are stored securely. Use “Edit credentials” to update them.', 'wpmudev-plugin-test' ) }</p>
-                        </div>
-                    ) }
-                    </section>
+				{ isSettingsView && (
+					<section className="drive-summary-grid">
+						{ statusCards.map( ( card ) => (
+							<Card
+								key={ card.id }
+								className={ 'drive-summary drive-summary--' + card.tone }
+								elevated
+							>
+								<CardContent>
+									<span className="drive-summary__label">{ card.label }</span>
+									<span className="drive-summary__value">{ card.value }</span>
+									<p className="drive-summary__helper">{ card.helper }</p>
+								</CardContent>
+							</Card>
+						) ) }
+					</section>
+				) }
 
-                    <section className="drive-card drive-card--guide sui-box">
-                        <div className="sui-box-header">
-                            <h2 className="sui-box-title">{ __( 'Connection checklist', 'wpmudev-plugin-test' ) }</h2>
-                        </div>
-                        <div className="sui-box-body">
-                            <ol className="drive-steps">
-                                { setupSteps.map( ( step, index ) => (
-                                    <li key={ `step-${ index }` }>{ step }</li>
-                                ) ) }
-                            </ol>
-                            <div className="drive-info-block">
-                                <span className="drive-info-block__label">{ __( 'Authorized redirect URI', 'wpmudev-plugin-test' ) }</span>
-                            <code className="drive-info-block__code">{ driveConfig.redirectUri }</code>
-                        </div>
-                        <div className="drive-info-block">
-                            <span className="drive-info-block__label">{ __( 'Required scopes', 'wpmudev-plugin-test' ) }</span>
-                            <ul className="drive-info-block__list">
-                                { scopes.map( ( scope ) => (
-                                    <li key={ scope }>{ scope }</li>
-                                ) ) }
-                            </ul>
-                        </div>
-                    </div>
-                </section>
-                </div>
-            ) }
+				<div className="drive-layout">
+					<div className="drive-layout__column">
+						{ isSettingsView && renderCredentialsPanel() }
+						{ renderDriveActions() }
+						{ isManageView && renderFolderPanel() }
+					</div>
+					{ isManageView && (
+						<div className="drive-layout__column">
+							{ renderUploadPanel() }
+						</div>
+					) }
+				</div>
 
-            { isSettingsView && (
-                <div className="drive-page__grid">
-                    { renderDriveActions() }
-                </div>
-            ) }
-
-            { isAuthenticated && isManageView && (
-                <>
-                <div className="drive-page__grid drive-page__grid--actions">
-                        <div className="drive-card drive-card--upload sui-box">
-                            <div className="sui-box-header">
-                                <h2 className="sui-box-title">{ __( 'Upload File to Drive', 'wpmudev-plugin-test' ) }</h2>
-                            </div>
-                    <div className="sui-box-body">
-                        <p className="drive-card__description">
-                            { __( 'Select a file from your device and send it straight to the connected Google Drive project.', 'wpmudev-plugin-test' ) }
-                        </p>
-                        <div
-                            className={ `drive-upload-dropzone${ isDraggingOver ? ' is-dragging' : '' }${ uploadFile ? ' has-file' : '' }` }
-                            onDragOver={ handleDragOver }
-                            onDragLeave={ handleDragLeave }
-                            onDrop={ handleDrop }
-                            onClick={ handleSelectFile }
-                            onKeyDown={ handleDropzoneKeyDown }
-                            role="button"
-                            tabIndex={ 0 }
-                        >
-                            <input
-                                key={ fileInputKey }
-                                ref={ fileInputRef }
-                                type="file"
-                                className="drive-file-input-native"
-                                onChange={ handleFileInputChange }
-                            />
-                            <div className="drive-upload-dropzone__inner">
-                                <span className="drive-upload-dropzone__icon" aria-hidden="true" />
-                                <p className="drive-upload-dropzone__title">
-                                    { __( 'Drop files to upload', 'wpmudev-plugin-test' ) }
-                                </p>
-                                <p className="drive-upload-dropzone__subtitle">
-                                    { __( 'or click to browse your computer', 'wpmudev-plugin-test' ) }
-                                </p>
-                                <p className="drive-upload-dropzone__hint">
-                                    { sprintf( __( 'Upload limit: %s', 'wpmudev-plugin-test' ), uploadLimitLabel ) }
-                                </p>
-                                { uploadFile && (
-                                    <div className="drive-upload-dropzone__meta">
-                                        <p>
-                                            { sprintf(
-                                                __( 'Selected: %1$s (%2$s)', 'wpmudev-plugin-test' ),
-                                                uploadFile.name,
-                                                formatBytes( uploadFile.size )
-                                            ) }
-                                        </p>
-                                        <Button variant="link" onClick={ handleClearSelectedFile }>
-                                            { __( 'Clear selection', 'wpmudev-plugin-test' ) }
-                                        </Button>
-                                    </div>
-                                ) }
-                            </div>
-                        </div>
-                        { typeof uploadProgress === 'number' && (
-                            <p className="drive-upload-dropzone__progress">
-                                { sprintf( __( 'Upload progress: %d%%', 'wpmudev-plugin-test' ), uploadProgress ) }
-                            </p>
-                        ) }
-                    </div>
-                            <div className="sui-box-footer">
-                                <div className="sui-actions-right">
-                                    <Button
-                                        variant="primary"
-                                        onClick={ handleUpload }
-                                        isBusy={ uploading }
-                                        disabled={ uploading || ! uploadFile }
-                                    >
-                                        { uploading ? __( 'Uploading…', 'wpmudev-plugin-test' ) : __( 'Upload to Drive', 'wpmudev-plugin-test' ) }
-                                    </Button>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="drive-card drive-card--folder sui-box">
-                            <div className="sui-box-header">
-                                <h2 className="sui-box-title">{ __( 'Create New Folder', 'wpmudev-plugin-test' ) }</h2>
-                            </div>
-                            <div className="sui-box-body">
-                                <p className="drive-card__description">
-                                    { __( 'Spin up a folder in Drive to organize uploads or test API permissions quickly.', 'wpmudev-plugin-test' ) }
-                                </p>
-                                <div className="sui-box-settings-row">
-                                    <TextControl
-                                        label={ __( 'Folder Name', 'wpmudev-plugin-test' ) }
-                                        value={ folderName }
-                                        onChange={ setFolderName }
-                                        placeholder={ __( 'Enter folder name', 'wpmudev-plugin-test' ) }
-                                    />
-                                </div>
-                            </div>
-                            <div className="sui-box-footer">
-                                <div className="sui-actions-right">
-                                    <Button
-                                        variant="secondary"
-                                        onClick={ handleCreateFolder }
-                                        isBusy={ creatingFolder }
-                                        disabled={ creatingFolder || ! folderName.trim() }
-                                    >
-                                        { creatingFolder ? __( 'Creating…', 'wpmudev-plugin-test' ) : __( 'Create Folder', 'wpmudev-plugin-test' ) }
-                                    </Button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="drive-card drive-card--files sui-box">
-                        <div className="sui-box-header">
-                            <h2 className="sui-box-title">{ __( 'Your Drive Files', 'wpmudev-plugin-test' ) }</h2>
-                            <div className="sui-actions-right">
-                                <Button
-                                    variant="secondary"
-                                    onClick={ () => {
-                                        resetRenameState();
-                                        loadFiles( {
-                                            append: false,
-                                            folderId: currentFolder?.id || '',
-                                            search: searchTerm.trim(),
-                                        } );
-                                    } }
-                                    isBusy={ filesLoading }
-                                >
-                                    { filesLoading ? __( 'Refreshing…', 'wpmudev-plugin-test' ) : __( 'Refresh Files', 'wpmudev-plugin-test' ) }
-                                </Button>
-                            </div>
-                        </div>
-                        <div className="sui-box-body">
-                            <p className="drive-card__description">
-                                { __( 'Browse the items returned by the Google Drive API. Download or open files directly.', 'wpmudev-plugin-test' ) }
-                            </p>
-                            { renderFiles() }
-                        </div>
-                    </div>
-                </>
-            ) }
-        </div>
-    );
+				{ isManageView && (
+					<Card className="drive-card drive-card--files" elevated>
+						<CardHeader className="drive-card__header">
+							<div>
+								<CardTitle>{ __( 'Your Drive Files', 'wpmudev-plugin-test' ) }</CardTitle>
+								<CardDescription>{ __( 'Browse the live Drive listing. Search, sort, open in Drive, or download instantly.', 'wpmudev-plugin-test' ) }</CardDescription>
+							</div>
+							<Button
+								variant="ghost"
+								size="sm"
+								onClick={ handleRefreshFiles }
+								isLoading={ filesLoading }
+							>
+								{ filesLoading ? __( 'Refreshing…', 'wpmudev-plugin-test' ) : __( 'Refresh list', 'wpmudev-plugin-test' ) }
+							</Button>
+						</CardHeader>
+						<CardContent className="drive-card__content drive-card__content--files">
+							{ renderFiles() }
+						</CardContent>
+					</Card>
+				) }
+			</div>
+		</div>
+	);
 };
 
 const mountNode = document.getElementById( driveConfig.dom_element_id );

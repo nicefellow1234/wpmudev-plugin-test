@@ -1,767 +1,567 @@
-// ------------------------------------------------------------
-// Shared UI (namespaced) + asset path configuration
-// ------------------------------------------------------------
-// Configure paths ON LOAD with `with(...)` and keep a namespace
-// to avoid polluting the global scope (no variable collisions).
-@use "~@wpmudev/shared-ui/scss/shared-ui" as sui with (
-  $sui-font-path: "~@wpmudev/shared-ui/dist/fonts/",
-  $sui-image-path: "~@wpmudev/shared-ui/dist/images/"
-);
+.drive-admin {
+  background: var(--shadcn-background);
+}
 
-// If you need variables/mixins from shared-ui, prefix with `sui.`
-// Example:
-// .btn { @include sui.button(); }
-// .title { font-family: sui.$sui-font-family; }
+.drive-shell {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 28px 64px;
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
 
-// ------------------------------------------------------------
-// Local styles
-// ------------------------------------------------------------
+.drive-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) minmax(280px, 1fr);
+  gap: 24px;
+  align-items: stretch;
+}
 
-.drive-page {
+.drive-hero__copy {
+  background: var(--shadcn-card);
+  border: 1px solid var(--shadcn-border);
+  border-radius: 28px;
+  padding: 36px;
+  box-shadow: var(--shadcn-shadow-soft);
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.drive-hero__eyebrow {
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--shadcn-muted);
+}
+
+.drive-hero__copy h1 {
+  margin: 0;
+  font-size: clamp(28px, 3vw, 38px);
+}
+
+.drive-hero__copy p {
+  font-size: 16px;
+  color: var(--shadcn-muted-foreground);
+  margin: 0;
+}
+
+.drive-hero__status {
+  margin-top: auto;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 18px 20px;
+  background: rgba(248, 250, 252, 0.65);
+  border-radius: 20px;
+  border: 1px solid rgba(148, 163, 184, 0.18);
+}
+
+.drive-hero__status-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.drive-hero__status-text strong {
+  font-size: 15px;
+  color: var(--shadcn-foreground);
+}
+
+.drive-hero__status-text span {
+  font-size: 13px;
+  color: var(--shadcn-muted-foreground);
+}
+
+.drive-status-badge {
+  font-size: 12px;
+}
+
+.drive-hero__card {
+  border-radius: 28px;
+}
+
+.drive-hero__stats {
+  row-gap: 14px;
+}
+
+.drive-alert {
+  border-radius: 18px;
+  border: 1px solid rgba(148, 163, 184, 0.28);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+}
+
+.drive-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 18px;
+}
+
+.drive-summary {
+  border-radius: 18px;
+}
+
+.drive-summary__label {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--shadcn-muted);
+}
+
+.drive-summary__value {
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--shadcn-foreground);
+}
+
+.drive-summary__helper {
+  margin: 0;
+  font-size: 13px;
+  color: var(--shadcn-muted-foreground);
+}
+
+.drive-summary--success .drive-summary__value {
+  color: #15803d;
+}
+
+.drive-summary--warning .drive-summary__value {
+  color: #b45309;
+}
+
+.drive-layout {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 24px;
+}
+
+.drive-layout__column {
   display: flex;
   flex-direction: column;
   gap: 24px;
 }
 
-.drive-page__header {
+.drive-card__content--actions {
   display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 24px;
-  padding: 24px;
-  background: #ffffff;
-  border: 1px solid #dfe1e5;
-  border-radius: 12px;
-  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+  flex-direction: column;
+  gap: 18px;
 }
 
-.drive-page__header-text .sui-header-title {
-  margin-bottom: 8px;
+.drive-card__content--form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
 }
 
-.drive-page__header-status {
-  max-width: 320px;
+.drive-card__content--upload {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
 }
 
-.drive-page__status-title {
-  margin: 12px 0 4px;
-  font-size: 16px;
-  font-weight: 600;
-  color: #1e293b;
-}
-
-.drive-page__status-text {
-  margin: 0;
-  color: #475569;
-  line-height: 1.4;
-}
-
-.drive-status-badge {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 4px 12px;
-  border-radius: 999px;
-  font-size: 12px;
-  font-weight: 600;
-  letter-spacing: 0.03em;
-  text-transform: uppercase;
-}
-
-.drive-status-badge--success {
-  color: #035d27;
-  background: rgba(0, 163, 42, 0.12);
-}
-
-.drive-status-badge--warning {
-  color: #8a5300;
-  background: rgba(218, 143, 0, 0.18);
-}
-
-.drive-status-badge--muted,
-.drive-status-badge--neutral {
-  color: #334155;
-  background: rgba(148, 163, 184, 0.22);
-}
-
-.drive-page__summary {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+.drive-card__content--summary {
+  display: flex;
+  flex-direction: column;
   gap: 16px;
 }
 
-.drive-summary-card {
-  padding: 16px 18px;
-  border: 1px solid #e2e8f0;
-  border-radius: 10px;
-  background: #ffffff;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4);
+.drive-card__content--files {
+  padding-top: 8px;
+}
+
+.drive-card__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.drive-card__hint {
+  margin: 0;
+  font-size: 13px;
+  color: var(--shadcn-muted-foreground);
+}
+
+.drive-card__scopes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.drive-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 999px;
+  background: rgba(59, 130, 246, 0.12);
+  color: #1d4ed8;
+}
+
+.drive-card__footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+}
+
+.drive-card__footer-meta {
   display: flex;
   flex-direction: column;
   gap: 6px;
 }
 
-.drive-summary-card__label {
+.drive-card__footer-label {
   font-size: 12px;
   text-transform: uppercase;
-  letter-spacing: 0.04em;
-  color: #64748b;
+  letter-spacing: 0.05em;
+  color: var(--shadcn-muted);
 }
 
-.drive-summary-card__value {
-  font-size: 18px;
-  color: #0f172a;
-  font-weight: 600;
+.drive-card__footer--compact {
+  flex-wrap: wrap;
 }
 
-.drive-summary-card__helper {
-  margin: 0;
+.drive-card__breadcrumbs {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   font-size: 13px;
-  color: #475569;
-  line-height: 1.4;
+  color: var(--shadcn-muted-foreground);
 }
 
-.drive-summary-card--success {
-  border-color: rgba(0, 163, 42, 0.25);
+.drive-card__breadcrumbs span::after {
+  content: '/';
+  margin-left: 6px;
+  color: rgba(148, 163, 184, 0.65);
 }
 
-.drive-summary-card--warning {
-  border-color: rgba(218, 143, 0, 0.35);
-}
-
-.drive-summary-card--muted,
-.drive-summary-card--neutral {
-  border-color: rgba(148, 163, 184, 0.35);
-}
-
-.drive-page__grid {
-  display: grid;
-  gap: 24px;
-}
-
-.drive-page__grid--primary {
-  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-}
-
-.drive-page__grid--actions {
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+.drive-card__breadcrumbs span:last-child::after {
+  display: none;
 }
 
 .drive-upload-dropzone {
   position: relative;
-  border: 2px dashed #bfdbfe;
-  border-radius: 16px;
-  padding: 32px 24px;
-  background: linear-gradient(135deg, rgba(59, 130, 246, 0.08), rgba(37, 99, 235, 0.08));
+  border: 2px dashed rgba(37, 99, 235, 0.35);
+  border-radius: 20px;
+  padding: 36px 28px;
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.08), rgba(37, 99, 235, 0.05));
   text-align: center;
   cursor: pointer;
   transition: border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
-  width: 100%;
 }
 
 .drive-upload-dropzone:hover {
-  border-color: #2563eb;
+  border-color: rgba(37, 99, 235, 0.6);
   background: rgba(59, 130, 246, 0.12);
 }
 
 .drive-upload-dropzone.is-dragging {
-  border-color: #2563eb;
-  background: rgba(37, 99, 235, 0.12);
-  box-shadow: 0 14px 32px rgba(37, 99, 235, 0.25);
+  border-color: rgba(37, 99, 235, 0.75);
+  background: rgba(37, 99, 235, 0.1);
+  box-shadow: 0 20px 48px rgba(37, 99, 235, 0.18);
 }
 
 .drive-upload-dropzone.has-file {
-  border-color: rgba(2, 132, 199, 0.5);
+  border-color: rgba(14, 116, 144, 0.55);
   background: rgba(226, 232, 240, 0.35);
 }
 
 .drive-upload-dropzone:focus-visible {
   outline: none;
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.25);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.35);
 }
 
 .drive-upload-dropzone__inner {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  min-height: 170px;
-  gap: 10px;
+  gap: 14px;
 }
 
 .drive-upload-dropzone__icon {
-  width: 60px;
-  height: 60px;
-  border-radius: 18px;
+  width: 68px;
+  height: 68px;
+  border-radius: 20px;
   background: linear-gradient(135deg, #2563eb, #1d4ed8);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #fff;
   font-size: 28px;
-  box-shadow: 0 12px 28px rgba(29, 78, 216, 0.22);
-}
-
-.drive-upload-dropzone__icon::before {
-  content: '⬆';
-  transform: translateY(-1px);
+  color: #f8fafc;
 }
 
 .drive-upload-dropzone__title {
-  margin: 10px 0 0;
+  font-size: 18px;
   font-weight: 600;
-  color: #0f172a;
+  color: var(--shadcn-foreground);
 }
 
-.drive-upload-dropzone__subtitle {
-  margin: 0;
-  color: #475569;
-}
-
-.drive-upload-dropzone__hint {
-  margin: 0;
-  font-size: 12px;
-  color: #64748b;
-}
-
+.drive-upload-dropzone__helper,
 .drive-upload-dropzone__meta {
-  margin-top: 12px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 6px;
-}
-
-.drive-upload-dropzone__meta p {
   margin: 0;
   font-size: 13px;
-  color: #0f172a;
+  color: var(--shadcn-muted-foreground);
 }
 
-.drive-upload-dropzone__meta .components-button {
-  font-size: 12px;
-  padding: 0;
-  color: #1d4ed8;
+.drive-upload-input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
 }
 
-.drive-upload-dropzone__meta .components-button:hover,
-.drive-upload-dropzone__meta .components-button:focus-visible {
-  color: #1e40af;
-  outline: none;
+.drive-upload-selection {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 20px;
+  border-radius: 16px;
+  background: rgba(241, 245, 249, 0.6);
+  border: 1px solid rgba(148, 163, 184, 0.25);
 }
 
-.drive-upload-dropzone__progress {
-  margin-top: 14px;
+.drive-upload-progress {
   font-size: 13px;
-  font-weight: 600;
-  color: #1d4ed8;
-}
-
-.drive-file-input-native {
-  display: none;
+  color: var(--shadcn-muted-foreground);
 }
 
 .drive-browser {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 20px;
 }
 
 .drive-files-toolbar {
   display: flex;
   flex-wrap: wrap;
-  gap: 12px;
-  align-items: center;
   justify-content: space-between;
+  gap: 16px;
+  align-items: center;
 }
 
 .drive-breadcrumbs {
   display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  background: rgba(248, 250, 252, 0.6);
+  border: 1px solid rgba(148, 163, 184, 0.24);
 }
 
 .drive-breadcrumbs__item {
-  border: 1px solid rgba(37, 99, 235, 0.28);
-  background: rgba(37, 99, 235, 0.08);
-  color: #1d4ed8;
-  border-radius: 999px;
-  padding: 6px 14px;
+  background: transparent;
+  border: none;
   font-size: 13px;
+  font-weight: 600;
+  color: var(--shadcn-muted-foreground);
+  padding: 4px 10px;
+  border-radius: 999px;
   cursor: pointer;
-  transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
 }
 
-.drive-breadcrumbs__item:hover:not(.is-current),
-.drive-breadcrumbs__item:focus-visible:not(.is-current) {
-  background: #1d4ed8;
-  color: #fff;
-  border-color: #1d4ed8;
-  outline: none;
+.drive-breadcrumbs__item:hover:not(:disabled) {
+  background: rgba(37, 99, 235, 0.1);
+  color: var(--shadcn-accent);
 }
 
 .drive-breadcrumbs__item.is-current {
-  background: rgba(15, 23, 42, 0.08);
-  border-color: rgba(15, 23, 42, 0.1);
-  color: #0f172a;
+  background: rgba(59, 130, 246, 0.18);
+  color: var(--shadcn-accent);
   cursor: default;
 }
 
 .drive-files-toolbar__actions {
   display: flex;
   align-items: center;
-  gap: 12px;
   flex-wrap: wrap;
-  margin-left: auto;
+  gap: 12px;
+}
+
+.drive-files-toolbar__sort select {
+  min-width: 160px;
 }
 
 .drive-files-toolbar__sort {
-  min-width: 180px;
-  flex: 0 0 180px;
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
 }
 
-.drive-files-toolbar__sort .components-base-control {
-  margin: 0;
+.drive-sort-label {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--shadcn-muted);
+  white-space: nowrap;
 }
 
-.drive-files-toolbar__sort .components-select-control__input {
-  min-width: 180px;
+.drive-sort-select {
+  background: rgba(248, 250, 252, 0.85);
+  border-radius: 14px;
+  border-color: rgba(148, 163, 184, 0.32);
+  min-width: 190px;
+}
+
+.drive-sort-select:focus {
+  border-color: rgba(37, 99, 235, 0.55);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.18);
 }
 
 .drive-files-toolbar__search {
   display: flex;
   align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-  row-gap: 10px;
+  gap: 10px;
 }
 
-.drive-files-toolbar__search .components-base-control {
-  min-width: 220px;
-  margin: 0;
-  flex: 1 1 220px;
-}
-
-.drive-files-toolbar__search .components-button {
-  flex-shrink: 0;
+.drive-files-toolbar__search input {
+  min-width: 200px;
 }
 
 .drive-files-toolbar__clear {
-  padding: 0;
-  color: #334155;
+  padding-inline: 0;
 }
 
-.drive-card {
+.drive-loading,
+.drive-empty-state {
   display: flex;
   flex-direction: column;
-}
-
-.drive-card .sui-box-body {
-  flex: 1;
-}
-
-.drive-card__description {
-  margin: 0 0 16px;
-  color: #475569;
-  line-height: 1.5;
-}
-
-.drive-steps {
-  margin: 0 0 18px;
-  padding-left: 18px;
-  color: #334155;
-  line-height: 1.6;
-}
-
-.drive-info-block {
-  padding: 14px 16px;
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
-  margin-bottom: 12px;
-}
-
-.drive-info-block:last-child {
-  margin-bottom: 0;
-}
-
-.drive-info-block__label {
-  display: block;
-  font-weight: 600;
-  color: #1e293b;
-  margin-bottom: 6px;
-}
-
-.drive-info-block__code {
-  display: block;
-  word-break: break-all;
-  font-size: 13px;
-  background: rgba(15, 23, 42, 0.06);
-  padding: 6px 8px;
-  border-radius: 6px;
-}
-
-.drive-info-block__list {
-  margin: 0;
-  padding-left: 18px;
-  color: #475569;
-  font-size: 13px;
-  line-height: 1.5;
-}
-
-.drive-empty-state {
-  padding: 36px 20px;
+  align-items: center;
+  gap: 12px;
+  padding: 48px 24px;
+  border-radius: 20px;
+  border: 1px dashed rgba(148, 163, 184, 0.35);
+  background: rgba(248, 250, 252, 0.5);
+  color: var(--shadcn-muted-foreground);
   text-align: center;
-  border: 1px dashed #cbd5f5;
-  border-radius: 10px;
-  background: rgba(59, 130, 246, 0.05);
 }
 
 .drive-empty-state__title {
-  margin: 0 0 8px;
+  font-size: 18px;
   font-weight: 600;
-  color: #1d4ed8;
-}
-
-.drive-empty-state__helper {
   margin: 0;
-  color: #475569;
-}
-
-.drive-files-more {
-  margin-top: 20px;
-  text-align: center;
-}
-
-.drive-card--files .drive-card__description {
-  margin-bottom: 24px;
-}
-
-.drive-page .components-button {
-  border-radius: 999px;
-  padding: 10px 22px;
-  font-weight: 600;
-  border: 1px solid transparent;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
-}
-
-.drive-page .components-button.is-primary {
-  background: #1d4ed8;
-  color: #ffffff;
-  box-shadow: 0 10px 24px rgba(37, 99, 235, 0.25);
-}
-
-.drive-page .components-button.is-primary:hover:not(:disabled),
-.drive-page .components-button.is-primary:focus-visible {
-  background: #1e40af;
-  box-shadow: 0 14px 30px rgba(37, 99, 235, 0.3);
-}
-
-.drive-page .components-button.is-secondary {
-  background: #f1f5f9;
-  color: #1f2937;
-  border-color: #d0d7e2;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5);
-}
-
-.drive-page .components-button.is-secondary:hover:not(:disabled),
-.drive-page .components-button.is-secondary:focus-visible {
-  background: #e2e8f0;
-  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.15);
-}
-
-.drive-page .drive-toggle-button {
-  background: #ffffff;
-  color: #1d4ed8;
-  border-color: rgba(37, 99, 235, 0.35);
-  box-shadow: 0 8px 20px rgba(37, 99, 235, 0.18);
-}
-
-.drive-page .drive-toggle-button:hover:not(:disabled),
-.drive-page .drive-toggle-button:focus-visible {
-  background: #f8fafc;
-  color: #1e40af;
-  border-color: rgba(37, 99, 235, 0.45);
-  box-shadow: 0 12px 26px rgba(37, 99, 235, 0.25);
-}
-
-.drive-page .components-button.is-link {
-  border-radius: 4px;
-  padding: 0;
-  box-shadow: none;
-  gap: 4px;
-  font-weight: 500;
-}
-
-.drive-page .components-button.is-link:hover,
-.drive-page .components-button.is-link:focus-visible {
-  transform: none;
-  box-shadow: none;
-}
-
-.drive-page .components-button:focus-visible {
-  outline: none;
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.28);
-}
-
-.drive-page .components-button:hover:not(:disabled),
-.drive-page .components-button:focus-visible {
-  transform: translateY(-1px);
-}
-
-.drive-page .components-button:disabled {
-  opacity: 0.6;
-  box-shadow: none;
-  transform: none;
-}
-
-.sui-box-body {
-  .components-base-control {
-    min-width: 100%;
-
-    input[type="text"] {
-      min-width: 100%;
-    }
-
-    label {
-      display: block;
-    }
-  }
-}
-
-// Google Drive Test specific styles
-.drive-loading {
-  text-align: center;
-  padding: 40px 20px;
-
-  .components-spinner {
-    margin: 0 auto 10px;
-  }
-
-  p {
-    color: #8c8f94;
-    margin: 0;
-  }
 }
 
 .drive-files-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-  gap: 20px;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 18px;
 }
 
 .drive-file-card {
+  position: relative;
   display: flex;
   flex-direction: column;
-  border: 1px solid #e2e8f0;
-  border-radius: 12px;
-  background: #ffffff;
-  box-shadow: 0 15px 35px rgba(15, 23, 42, 0.08);
-  overflow: visible;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-  position: relative;
-}
-
-.drive-file-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 20px 45px rgba(15, 23, 42, 0.14);
+  gap: 14px;
+  padding: 20px;
+  border-radius: 18px;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 18px 40px rgba(15, 23, 42, 0.08);
 }
 
 .drive-file-card__preview {
   position: relative;
-  height: 180px;
-  background: linear-gradient(135deg, rgba(226, 232, 240, 0.8), rgba(241, 245, 249, 0.6));
+  border-radius: 14px;
+  overflow: hidden;
+  background: rgba(148, 163, 184, 0.16);
+  aspect-ratio: 4 / 3;
   display: flex;
   align-items: center;
   justify-content: center;
-  overflow: hidden;
 }
 
 .drive-file-card__preview img {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  border-radius: 12px 12px 0 0;
-}
-
-.drive-file-card__preview--folder {
-  background: linear-gradient(135deg, rgba(37, 99, 235, 0.15), rgba(29, 78, 216, 0.3));
-}
-
-.drive-file-card__preview-fallback {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 100%;
-  height: 100%;
-  background: rgba(248, 250, 252, 0.9);
-  border-radius: 12px 12px 0 0;
-}
-
-.drive-file-card__vector {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
-}
-
-.drive-file-card__vector svg {
-  width: 68px;
-  height: auto;
-  max-width: 80%;
-}
-
-.drive-file-card__vector--folder {
-  color: #2563eb;
-}
-
-.drive-file-card__vector--file {
-  flex-direction: column;
-  gap: 6px;
-  align-items: center;
-  color: #1d4ed8;
-}
-
-.drive-file-card__file-ext {
-  font-size: 12px;
-  font-weight: 600;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: #334155;
-  pointer-events: none;
-}
-
-.drive-file-card__badge {
-  position: absolute;
-  top: 14px;
-  left: 14px;
-  background: rgba(15, 23, 42, 0.75);
-  color: #fff;
-  font-size: 12px;
-  padding: 6px 10px;
-  border-radius: 999px;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
 }
 
 .drive-file-card__menu-trigger {
   position: absolute;
-  top: 12px;
-  right: 12px;
+  top: 16px;
+  right: 16px;
+  border: none;
+  background: rgba(15, 23, 42, 0.65);
+  color: #f8fafc;
+  border-radius: 999px;
   width: 32px;
   height: 32px;
-  border-radius: 50%;
-  background: rgba(15, 23, 42, 0.65);
-  border: none;
-  display: flex;
+  cursor: pointer;
+  display: inline-flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 4px;
-  cursor: pointer;
-  transition: background 0.2s ease, transform 0.2s ease;
 }
 
 .drive-file-card__menu-trigger span {
+  display: block;
   width: 4px;
   height: 4px;
   border-radius: 50%;
-  background: #ffffff;
-}
-
-.drive-file-card__menu-trigger:hover {
-  background: rgba(15, 23, 42, 0.85);
-  transform: translateY(-1px);
-}
-
-.drive-file-card__menu-trigger:focus-visible {
-  outline: none;
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.35);
+  background: currentColor;
 }
 
 .drive-file-card__menu {
   position: absolute;
-  top: 46px;
+  top: 44px;
   right: 16px;
-  background: #ffffff;
-  border: 1px solid rgba(148, 163, 184, 0.35);
-  border-radius: 10px;
-  box-shadow: 0 18px 38px rgba(15, 23, 42, 0.18);
-  padding: 6px 0;
-  min-width: 180px;
+  background: var(--shadcn-card);
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  border-radius: 14px;
+  box-shadow: var(--shadcn-shadow-soft);
+  padding: 8px;
   display: flex;
   flex-direction: column;
-  z-index: 3;
+  gap: 6px;
+  z-index: 5;
 }
 
 .drive-file-card__menu-item {
-  display: flex;
-  align-items: center;
-  width: 100%;
-  padding: 9px 16px;
   background: transparent;
   border: none;
   font-size: 13px;
-  color: #0f172a;
+  text-align: left;
+  padding: 8px 12px;
+  border-radius: 10px;
+  color: var(--shadcn-foreground);
   cursor: pointer;
-  transition: background 0.15s ease, color 0.15s ease;
 }
 
-.drive-file-card__menu-item:hover,
-.drive-file-card__menu-item:focus-visible {
-  background: rgba(37, 99, 235, 0.12);
-  color: #1d4ed8;
-  outline: none;
-}
-
-.drive-file-card__menu-item:disabled {
-  opacity: 0.45;
-  cursor: not-allowed;
+.drive-file-card__menu-item:hover:not(:disabled) {
+  background: rgba(59, 130, 246, 0.12);
+  color: var(--shadcn-accent);
 }
 
 .drive-file-card__menu-item--danger {
-  color: #b91c1c;
+  color: #dc2626;
 }
 
-.drive-file-card__menu-item--danger:hover,
-.drive-file-card__menu-item--danger:focus-visible {
-  background: rgba(248, 113, 113, 0.15);
-  color: #991b1b;
-}
-
-.drive-file-card__meta {
-  padding: 20px;
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-  flex: 1;
-}
-
-.drive-file-card__name {
+.drive-file-card__meta h3 {
   margin: 0;
   font-size: 16px;
   font-weight: 600;
-  color: #0f172a;
-  word-break: break-word;
 }
 
 .drive-file-card__details {
   margin: 0;
   font-size: 13px;
-  color: #64748b;
+  color: var(--shadcn-muted-foreground);
 }
 
 .drive-file-card__rename {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 12px;
 }
 
 .drive-file-card__rename-actions {
@@ -770,82 +570,36 @@
   gap: 10px;
 }
 
-// Authentication section
-.sui-description {
-  color: #757575;
-  margin-bottom: 30px;
+.drive-files-more {
+  display: flex;
+  justify-content: center;
 }
 
-// Notice styling adjustments
-.components-notice {
-  margin: 20px 0;
+.drive-files-more .shadcn-button.is-loading > span {
+  gap: 8px;
+  display: inline-flex;
+  align-items: center;
+}
 
-  &.is-success {
-    border-left-color: #00a32a;
-  }
-
-  &.is-error {
-    border-left-color: #d63638;
+@media (max-width: 1024px) {
+  .drive-hero {
+    grid-template-columns: 1fr;
   }
 }
 
-// Responsive adjustments
-@media (max-width: 768px) {
-  .drive-page__header {
+@media (max-width: 782px) {
+  .drive-shell {
+    padding-inline: 18px;
+    gap: 24px;
+  }
+
+  .drive-card__footer {
     flex-direction: column;
     align-items: flex-start;
   }
 
-  .drive-page__header-status {
-    max-width: none;
-  }
-
-  .drive-files-toolbar {
+  .drive-files-toolbar__search {
     flex-direction: column;
     align-items: stretch;
-    gap: 16px;
-  }
-
-  .drive-files-toolbar__actions {
-    width: 100%;
-    justify-content: flex-start;
-    margin-left: 0;
-    gap: 10px;
-  }
-
-  .drive-files-toolbar__search {
-    width: 100%;
-    flex-wrap: wrap;
-  }
-
-  .drive-files-toolbar__search .components-base-control {
-    min-width: 100%;
-  }
-
-  .drive-files-toolbar__sort,
-  .drive-files-toolbar__sort .components-select-control__input {
-    min-width: 100%;
-  }
-
-  .drive-files-toolbar__sort {
-    flex: 1 1 100%;
-  }
-
-  .drive-upload-dropzone {
-    padding: 24px 20px;
-  }
-
-  .drive-upload-dropzone__inner {
-    min-height: 150px;
-  }
-
-  .drive-files-grid {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .sui-box-header {
-    .sui-actions-right {
-      margin-top: 15px;
-    }
   }
 }

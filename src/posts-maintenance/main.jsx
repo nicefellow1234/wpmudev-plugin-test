@@ -7,19 +7,29 @@ import {
 	useState,
 	useCallback,
 	useRef,
-} from '@wordpress/element';
-import { __, sprintf } from '@wordpress/i18n';
-import apiFetch, { createNonceMiddleware } from '@wordpress/api-fetch';
-import {
-	Button,
-	CheckboxControl,
-	Card,
-	CardBody,
-	ToggleControl,
-	TextControl,
-} from '@wordpress/components';
+} from "@wordpress/element";
+import { __, sprintf } from "@wordpress/i18n";
+import apiFetch, { createNonceMiddleware } from "@wordpress/api-fetch";
 
-import './scss/style.scss';
+import {
+	Alert,
+	Badge,
+	Button,
+	Card,
+	CardContent,
+	CardDescription,
+	CardFooter,
+	CardHeader,
+	CardTitle,
+	Checkbox,
+	FormField,
+	Input,
+	Progress,
+	Switch,
+} from "../ui";
+
+import "../styles/shadcn.scss";
+import "./scss/style.scss";
 
 const config = window.wpmudevPostsMaintenance || {};
 
@@ -127,11 +137,13 @@ const arraysMatch = ( first = [], second = [] ) => {
 };
 
 const StatCard = ( { label, value, helper, tone = 'default' } ) => (
-	<div className={ `pm-stat-card tone-${ tone }` }>
-		<span className="pm-stat-card__label">{ label }</span>
-		<span className="pm-stat-card__value">{ value }</span>
-		{ helper && <span className="pm-stat-card__helper">{ helper }</span> }
-	</div>
+	<Card className={ `posts-stat tone-${ tone }` } elevated>
+		<CardContent>
+			<span className="posts-stat__label">{ label }</span>
+			<span className="posts-stat__value">{ value }</span>
+			{ helper && <span className="posts-stat__helper">{ helper }</span> }
+		</CardContent>
+	</Card>
 );
 
 const ProgressBadge = ( { status } ) => {
@@ -145,9 +157,9 @@ const ProgressBadge = ( { status } ) => {
 	};
 
 	return (
-		<span className={ `pm-badge status-${ status || 'idle' }` }>
+		<Badge tone={ status === 'completed' ? 'success' : status === 'failed' ? 'warning' : 'accent' }>
 			{ map[ status ] || __( 'Idle', 'wpmudev-plugin-test' ) }
-		</span>
+		</Badge>
 	);
 };
 
@@ -561,65 +573,68 @@ const App = () => {
 		: __( 'Preferences synced to server.', 'wpmudev-plugin-test' );
 
 	return (
-		<div className="sui-wrap pm-wrap">
-			<div className="pm-hero">
-				<div className="pm-hero__content">
-					<p className="pm-hero__eyebrow">{ __( 'Automation Suite', 'wpmudev-plugin-test' ) }</p>
-					<h1>
-						<span>{ __( 'Posts Maintenance', 'wpmudev-plugin-test' ) }</span>
-					</h1>
-					<p>
-						{ __( 'Run health scans over thousands of posts without leaving the page. Choose your targets, fire the scanner, and let our background worker update the `wpmudev_test_last_scan` meta for every entry.', 'wpmudev-plugin-test' ) }
-					</p>
-					<div className="pm-hero__meta">
-						<span>{ sprintf( __( 'Current filter: %s', 'wpmudev-plugin-test' ), postTypesLabel ) }</span>
-						<span className="pm-hero__divider">|</span>
-						<span>{ sprintf( __( 'Last run: %s', 'wpmudev-plugin-test' ), lastRunDisplay ) }</span>
-					</div>
-				</div>
-				<div className="pm-hero__actions">
-					<div className="pm-hero__actions-buttons">
-						<Button
-							type="button"
-							className="pm-btn pm-btn--primary"
-							onClick={ handleStart }
-							isBusy={ isStarting }
-							disabled={ isStarting || jobActive || ! selectedTypes.length }
-						>
-							{ jobActive ? __( 'Scan In Progress...', 'wpmudev-plugin-test' ) : __( 'Scan Posts Now', 'wpmudev-plugin-test' ) }
-						</Button>
-						<Button
-							type="button"
-							className="pm-btn pm-btn--ghost pm-btn--ghost-invert"
-							onClick={ () => fetchStatus( false ) }
-							isBusy={ isRefreshing }
-						>
-							{ isRefreshing ? __( 'Syncing...', 'wpmudev-plugin-test' ) : __( 'Sync Status Now', 'wpmudev-plugin-test' ) }
-						</Button>
-						{ canCancel && (
-							<Button type="button" onClick={ handleCancel } className="pm-btn pm-btn--outline">
-								{ __( 'Cancel Scan', 'wpmudev-plugin-test' ) }
+		<div className="shadcn-admin posts-admin">
+			<div className="posts-shell">
+				<Card className="posts-hero" elevated>
+					<CardContent className="posts-hero__content">
+						<div className="posts-hero__copy">
+							<Badge tone="accent">{ __( 'Automation Suite', 'wpmudev-plugin-test' ) }</Badge>
+							<div className="posts-hero__title">
+								<h1>{ __( 'Posts Maintenance', 'wpmudev-plugin-test' ) }</h1>
+								<ProgressBadge status={ job?.status } />
+							</div>
+							<p>
+								{ __( 'Run health scans over thousands of posts without leaving the page. Choose your targets, fire the scanner, and let our background worker update the `wpmudev_test_last_scan` meta for every entry.', 'wpmudev-plugin-test' ) }
+							</p>
+							<div className="posts-hero__meta">
+								<span>{ sprintf( __( 'Current filter: %s', 'wpmudev-plugin-test' ), postTypesLabel ) }</span>
+								<span>{ sprintf( __( 'Last run: %s', 'wpmudev-plugin-test' ), lastRunDisplay ) }</span>
+							</div>
+						</div>
+						<div className="posts-hero__actions">
+							<Button
+								variant="primary"
+								size="lg"
+								onClick={ handleStart }
+								isLoading={ isStarting }
+								disabled={ isStarting || jobActive || ! selectedTypes.length }
+							>
+								{ jobActive ? __( 'Scan In Progress…', 'wpmudev-plugin-test' ) : __( 'Scan Posts Now', 'wpmudev-plugin-test' ) }
 							</Button>
-						) }
-						<Button
-							type="button"
-							className="pm-btn pm-btn--ghost pm-btn--ghost-alt"
-							onClick={ handleResetJob }
-							isBusy={ isResetting }
-							disabled={ isResetting }
-						>
-							{ __( 'Reset Scan State', 'wpmudev-plugin-test' ) }
-						</Button>
-					</div>
-					<p className="pm-hero__note">
-						{ jobActive
-							? __( 'Auto-refreshing every 4 seconds while the scan runs.', 'wpmudev-plugin-test' )
-							: __( 'Status refreshes automatically every few seconds.', 'wpmudev-plugin-test' ) }
-					</p>
-				</div>
-			</div>
+							<div className="posts-hero__actions-row">
+								<Button
+									variant="secondary"
+									size="sm"
+									onClick={ () => fetchStatus( false ) }
+									isLoading={ isRefreshing }
+								>
+									{ isRefreshing ? __( 'Syncing…', 'wpmudev-plugin-test' ) : __( 'Sync Status Now', 'wpmudev-plugin-test' ) }
+								</Button>
+								{ canCancel && (
+									<Button variant="outline" size="sm" onClick={ handleCancel }>
+										{ __( 'Cancel Scan', 'wpmudev-plugin-test' ) }
+									</Button>
+								) }
+								<Button
+									variant="ghost"
+									size="sm"
+									onClick={ handleResetJob }
+									isLoading={ isResetting }
+									disabled={ isResetting }
+								>
+									{ __( 'Reset Scan State', 'wpmudev-plugin-test' ) }
+								</Button>
+							</div>
+							<p className="posts-hero__note">
+								{ jobActive
+									? __( 'Auto-refreshing every few seconds while the scan runs.', 'wpmudev-plugin-test' )
+									: __( 'Status refreshes automatically every few seconds.', 'wpmudev-plugin-test' ) }
+							</p>
+						</div>
+					</CardContent>
+				</Card>
 
-			<div className="pm-stat-grid">
+			<div className="posts-stat-grid">
 				<StatCard
 					label={ __( 'Job status', 'wpmudev-plugin-test' ) }
 					value={ <ProgressBadge status={ job?.status } /> }
@@ -643,187 +658,139 @@ const App = () => {
 			</div>
 
 			{ notice && (
-				<div className="pm-toast-stack" aria-live="polite">
-					<div className={ `pm-toast pm-toast--${ notice.type || 'info' }` }>
-						<div className="pm-toast__body">
-							<span className="pm-toast__label">
-								{ notice.type === 'error'
-									? __( 'Heads up', 'wpmudev-plugin-test' )
-									: __( 'All good', 'wpmudev-plugin-test' ) }
-							</span>
-							<p className="pm-toast__message">{ notice.message }</p>
-						</div>
-						<button
-							type="button"
-							className="pm-toast__dismiss"
-							onClick={ () => setNotice( null ) }
-							aria-label={ __( 'Dismiss notification', 'wpmudev-plugin-test' ) }
-						>
-							<span aria-hidden="true">×</span>
-						</button>
-					</div>
-				</div>
+				<Alert
+					variant={ notice.type === 'error' ? 'error' : 'success' }
+					title={ notice.type === 'error' ? __( 'Heads up', 'wpmudev-plugin-test' ) : __( 'All good', 'wpmudev-plugin-test' ) }
+					description={ notice.message }
+					className="posts-alert"
+				>
+					<Button variant="link" size="sm" onClick={ () => setNotice( null ) }>
+						{ __( 'Dismiss', 'wpmudev-plugin-test' ) }
+					</Button>
+				</Alert>
 			) }
 
-			<div className="sui-box" id="pm-post-type-selector">
-				<div className="sui-box-header">
-					<h2 className="sui-box-title">{ __( 'Post Type Filters', 'wpmudev-plugin-test' ) }</h2>
-				</div>
-				<div className="sui-box-body">
-					<p className="sui-description">
+			<Card className="posts-card posts-card--types" id="pm-post-type-selector" elevated>
+				<CardHeader>
+					<CardTitle>{ __( 'Post Type Filters', 'wpmudev-plugin-test' ) }</CardTitle>
+					<CardDescription>
 						{ __( 'Select the post types you would like to include in the next maintenance scan.', 'wpmudev-plugin-test' ) }
-					</p>
-					<div className="pm-post-type-grid">
+					</CardDescription>
+				</CardHeader>
+				<CardContent>
+					<div className="posts-type-grid">
 						{ availableTypes.map( ( type ) => {
 							const isSelected = selectedTypes.includes( type.slug );
 
 							return (
-								<Card
-									key={ type.slug }
-									className={ `pm-type-card ${ isSelected ? 'pm-type-card--active' : '' }` }
-									onClick={ () => handleCardToggle( type.slug ) }
-									tabIndex={ jobActive ? -1 : 0 }
-									onKeyDown={ ( event ) => {
-										if ( jobActive ) {
-											return;
-										}
-
-										if ( event.key === 'Enter' || event.key === ' ' ) {
-											event.preventDefault();
-											handleCardToggle( type.slug );
-										}
-									} }
-								>
-									<CardBody>
-										<div className="pm-type-card__content">
-											<span className="pm-type-card__indicator" aria-hidden="true" />
-											<div className="pm-type-card__text">
-												<strong className="pm-type-card__label">{ type.label }</strong>
-												<span className="pm-type-card__slug">{ type.slug }</span>
-											</div>
-											<div className="pm-checkbox-hidden" onClick={ ( event ) => event.stopPropagation() }>
-												<CheckboxControl
-													label={ type.label }
-													checked={ isSelected }
-													onChange={ () => togglePostType( type.slug ) }
-													disabled={ jobActive }
-												/>
-											</div>
-										</div>
-									</CardBody>
-								</Card>
+								<div key={ type.slug } className={ `posts-type-card${ isSelected ? ' is-active' : '' }` }>
+									<Checkbox
+										label={ type.label }
+										description={ type.slug }
+										checked={ isSelected }
+										onChange={ () => togglePostType( type.slug ) }
+										disabled={ jobActive }
+									/>
+								</div>
 							);
 						} ) }
 						{ ! availableTypes.length && (
-							<p>{ __( 'No public post types were found.', 'wpmudev-plugin-test' ) }</p>
+							<p className="posts-type-empty">{ __( 'No public post types were found.', 'wpmudev-plugin-test' ) }</p>
 						) }
 					</div>
-				</div>
-				<div className="sui-box-footer">
-					<div className="sui-actions-left">
-						<p className="sui-description">
-							{ __( 'Filters are saved automatically and reused by the daily cron task.', 'wpmudev-plugin-test' ) }
-						</p>
-					</div>
-					<div className="sui-actions-right">
-						<Button
-							type="button"
-							className="pm-btn pm-btn--secondary"
-							onClick={ () => fetchStatus( false ) }
-							isBusy={ isRefreshing }
-						>
-							{ isRefreshing ? __( 'Syncing...', 'wpmudev-plugin-test' ) : __( 'Sync Filters From Server', 'wpmudev-plugin-test' ) }
-						</Button>
-					</div>
-				</div>
-			</div>
+				</CardContent>
+				<CardFooter className="posts-card__footer">
+					<p>{ __( 'Filters are saved automatically and reused by the daily cron task.', 'wpmudev-plugin-test' ) }</p>
+					<Button
+						variant="secondary"
+						size="sm"
+						onClick={ () => fetchStatus( false ) }
+						isLoading={ isRefreshing }
+					>
+						{ isRefreshing ? __( 'Syncing…', 'wpmudev-plugin-test' ) : __( 'Sync Filters From Server', 'wpmudev-plugin-test' ) }
+					</Button>
+				</CardFooter>
+			</Card>
 
-			<div className="pm-progress-panel pm-progress-panel--wide">
-				<div className="pm-progress-panel__header">
+			<Card className="posts-card posts-card--progress" elevated>
+				<CardHeader className="posts-progress__header">
 					<div>
-						<p className="pm-progress-panel__eyebrow">{ __( 'Scan Progress', 'wpmudev-plugin-test' ) }</p>
-						<h3>{ statusDescriptions[ job?.status ] || jobHelper }</h3>
-						<p className="pm-progress-panel__meta">
-							{ sprintf(
-								__( '%1$d of %2$d items processed.', 'wpmudev-plugin-test' ),
-								job?.processed || 0,
-								job?.total || 0
-							) }
-						</p>
+						<CardTitle>{ __( 'Scan Progress', 'wpmudev-plugin-test' ) }</CardTitle>
+						<CardDescription>{ statusDescriptions[ job?.status ] || jobHelper }</CardDescription>
 					</div>
 					<ProgressBadge status={ job?.status } />
-				</div>
-				<div
-					className="pm-progressbar-track"
-					role="progressbar"
-					aria-valuenow={ percentComplete }
-					aria-valuemin="0"
-					aria-valuemax="100"
-				>
-					<div
-						className={ `pm-progressbar-fill${ jobActive ? ' is-animated' : '' }` }
-						style={ { width: `${ percentComplete }%` } }
-					/>
-				</div>
-				{ job?.message && <p className="pm-status-message">{ job.message }</p> }
-				<div className="pm-progress-panel__timeline">
-					<div className={ `timeline-step ${ job?.status ? 'active' : '' }` }>
-						<span className="dot" />
-						<strong>{ __( 'Queued', 'wpmudev-plugin-test' ) }</strong>
-						<p>{ __( 'Waiting for background worker.', 'wpmudev-plugin-test' ) }</p>
+				</CardHeader>
+				<CardContent className="posts-progress">
+					<Progress value={ percentComplete } showLabel label={ sprintf( __( '%1$d%% complete', 'wpmudev-plugin-test' ), percentComplete ) } />
+					<p className="posts-progress__meta">
+						{ sprintf(
+							__( '%1$d of %2$d items processed.', 'wpmudev-plugin-test' ),
+							job?.processed || 0,
+							job?.total || 0
+						) }
+					</p>
+					{ job?.message && <p className="posts-progress__message">{ job.message }</p> }
+					<div className="posts-progress__timeline">
+						{ [
+							{ key: 'pending', label: __( 'Queued', 'wpmudev-plugin-test' ), helper: __( 'Waiting for background worker.', 'wpmudev-plugin-test' ) },
+							{ key: 'running', label: __( 'Running', 'wpmudev-plugin-test' ), helper: __( 'Processing posts in batches.', 'wpmudev-plugin-test' ) },
+							{ key: 'completed', label: __( 'Completed', 'wpmudev-plugin-test' ), helper: __( 'Meta updated and history recorded.', 'wpmudev-plugin-test' ) },
+						].map( ( step ) => (
+							<div key={ step.key } className={ `posts-timeline__step${ job?.status === step.key ? ' is-active' : '' }` }>
+								<span className="posts-timeline__dot" />
+								<strong>{ step.label }</strong>
+								<p>{ step.helper }</p>
+							</div>
+						) ) }
 					</div>
-					<div className={ `timeline-step ${ job?.status === 'running' ? 'active' : '' }` }>
-						<span className="dot" />
-						<strong>{ __( 'Running', 'wpmudev-plugin-test' ) }</strong>
-						<p>{ __( 'Processing posts in batches of 25.', 'wpmudev-plugin-test' ) }</p>
-					</div>
-					<div className={ `timeline-step ${ job?.status === 'completed' ? 'active' : '' }` }>
-						<span className="dot" />
-						<strong>{ __( 'Completed', 'wpmudev-plugin-test' ) }</strong>
-						<p>{ __( 'Meta updated and history recorded.', 'wpmudev-plugin-test' ) }</p>
-					</div>
-				</div>
-			</div>
+				</CardContent>
+			</Card>
 
-			<div className="sui-box pm-automation-box">
-				<div className="sui-box-header">
-					<h2 className="sui-box-title">{ __( 'Automation Schedule', 'wpmudev-plugin-test' ) }</h2>
-				</div>
-				<div className="sui-box-body">
-					<div className="pm-automation-grid">
-						<ToggleControl
-							checked={ cronEnabled }
+			<Card className="posts-card posts-card--automation" elevated>
+				<CardHeader>
+					<CardTitle>{ __( 'Automation Schedule', 'wpmudev-plugin-test' ) }</CardTitle>
+					<CardDescription>
+						{ __( 'Control how WP-Cron triggers scans automatically.', 'wpmudev-plugin-test' ) }
+					</CardDescription>
+				</CardHeader>
+				<CardContent className="posts-automation">
+					<div className="posts-automation__switches">
+						<Switch
 							label={ __( 'Enable daily WP-Cron task', 'wpmudev-plugin-test' ) }
-							help={ __( 'Keeps the maintenance scan running once per day without manual input.', 'wpmudev-plugin-test' ) }
+							description={ __( 'Keeps the maintenance scan running once per day without manual input.', 'wpmudev-plugin-test' ) }
+							checked={ cronEnabled }
 							onChange={ ( value ) => setCronEnabled( value ) }
 						/>
-						<ToggleControl
-							checked={ isMultiRun }
+						<Switch
 							label={ __( 'Run multiple times per day', 'wpmudev-plugin-test' ) }
-							help={ __( 'Schedule up to six daily executions at specific times.', 'wpmudev-plugin-test' ) }
+							description={ __( 'Schedule up to six daily executions at specific times.', 'wpmudev-plugin-test' ) }
+							checked={ isMultiRun }
 							onChange={ handleMultiRunToggle }
 							disabled={ ! cronEnabled }
 						/>
 					</div>
-					<div className={ `pm-cron-times ${ cronEnabled ? '' : 'is-disabled' }` }>
+					<div className={ `posts-cron-times${ cronEnabled ? '' : ' is-disabled' }` }>
 						{ cronTimes.map( ( time, index ) => (
-							<div className="pm-cron-time-row" key={ `cron-time-${ index }-${ time }` }>
-								<TextControl
+							<div className="posts-cron-time" key={ `cron-time-${ index }-${ time }` }>
+								<FormField
 									label={
 										index === 0
 											? __( 'Run time (site timezone)', 'wpmudev-plugin-test' )
 											: __( 'Additional run time', 'wpmudev-plugin-test' )
 									}
-									type="time"
-									value={ time }
-									onChange={ ( value ) => handleCronTimeChange( index, value ) }
-									disabled={ ! cronEnabled }
-									step="60"
-								/>
+								>
+									<Input
+										type="time"
+										value={ time }
+										onChange={ ( event ) => handleCronTimeChange( index, event.target.value ) }
+										disabled={ ! cronEnabled }
+										step="60"
+									/>
+								</FormField>
 								{ isMultiRun && cronTimes.length > 1 && (
 									<Button
-										type="button"
-										className="pm-btn pm-btn--ghost pm-cron-remove"
+										variant="ghost"
+										size="sm"
 										onClick={ () => removeCronTimeRow( index ) }
 										disabled={ ! cronEnabled }
 									>
@@ -832,67 +799,63 @@ const App = () => {
 								) }
 							</div>
 						) ) }
-						{ cronEnabled && isMultiRun && (
-							<div className="pm-cron-actions">
-								<Button
-									type="button"
-									className="pm-btn pm-btn--ghost pm-cron-add"
-									onClick={ addCronTimeRow }
-									disabled={ ! canAddCronSlot }
-								>
-									{ __( 'Add another run time', 'wpmudev-plugin-test' ) }
-								</Button>
-								{ ! canAddCronSlot && (
-									<p className="sui-description pm-cron-limit">
-										{ __( 'Maximum of six daily runs reached.', 'wpmudev-plugin-test' ) }
-									</p>
-								) }
-							</div>
-						) }
 					</div>
-					<p className="sui-description">
+					{ cronEnabled && isMultiRun && (
+						<div className="posts-cron-actions">
+							<Button
+								variant="ghost"
+								size="sm"
+								onClick={ addCronTimeRow }
+								disabled={ ! canAddCronSlot }
+							>
+								{ __( 'Add another run time', 'wpmudev-plugin-test' ) }
+							</Button>
+							{ ! canAddCronSlot && (
+								<p className="posts-cron-limit">
+									{ __( 'Maximum of six daily runs reached.', 'wpmudev-plugin-test' ) }
+								</p>
+							) }
+						</div>
+					) }
+					<p className="posts-automation__note">
 						{ cronEnabled
 							? __( 'Each time listed above is queued automatically with WP-Cron.', 'wpmudev-plugin-test' )
 							: __( 'Daily automation is paused until you enable it again.', 'wpmudev-plugin-test' ) }
 					</p>
-				</div>
-				<div className="sui-box-footer">
-					<div className="sui-actions-left">
-						<p className={ `pm-save-indicator ${ hasPendingSettings ? 'is-dirty' : '' }` }>
-							{ saveIndicatorText }
-						</p>
-					</div>
-					<div className="sui-actions-right">
-						<Button
-							type="button"
-							className="pm-btn pm-btn--secondary"
-							onClick={ handleManualSave }
-							isBusy={ isSavingSettings }
-							disabled={ isSavingSettings || ! config.endpoints?.settings }
-						>
-							{ __( 'Save Automation Settings', 'wpmudev-plugin-test' ) }
-						</Button>
-					</div>
-				</div>
-			</div>
+				</CardContent>
+				<CardFooter className="posts-card__footer">
+					<p className={ `posts-save-indicator${ hasPendingSettings ? ' is-dirty' : '' }` }>
+						{ saveIndicatorText }
+					</p>
+					<Button
+						variant="secondary"
+						onClick={ handleManualSave }
+						isLoading={ isSavingSettings }
+						disabled={ isSavingSettings || ! config.endpoints?.settings }
+					>
+						{ __( 'Save Automation Settings', 'wpmudev-plugin-test' ) }
+					</Button>
+				</CardFooter>
+			</Card>
 
-			<div className="pm-history-grid pm-history-grid--single">
-				<div className="sui-box pm-cli-box">
-					<div className="sui-box-header">
-						<h2 className="sui-box-title">{ __( 'WP-CLI Shortcut', 'wpmudev-plugin-test' ) }</h2>
-					</div>
-					<div className="sui-box-body">
-						<p>{ __( 'Run the same maintenance routine directly from the terminal. Perfect for cron jobs or CI pipelines.', 'wpmudev-plugin-test' ) }</p>
-						<pre>
-							<code>{ cliCommand }</code>
-						</pre>
-						<p className="sui-description">
-							{ __( 'Add `--allow-root` when running inside containers or root shells.', 'wpmudev-plugin-test' ) }
-						</p>
-					</div>
-				</div>
-			</div>
+			<Card className="posts-card posts-card--cli" elevated>
+				<CardHeader>
+					<CardTitle>{ __( 'WP-CLI Shortcut', 'wpmudev-plugin-test' ) }</CardTitle>
+					<CardDescription>
+						{ __( 'Run the same maintenance routine directly from the terminal. Perfect for cron jobs or CI pipelines.', 'wpmudev-plugin-test' ) }
+					</CardDescription>
+				</CardHeader>
+				<CardContent className="posts-cli">
+					<pre>
+						<code>{ cliCommand }</code>
+					</pre>
+					<p className="posts-cli__note">
+						{ __( 'Add `--allow-root` when running inside containers or root shells.', 'wpmudev-plugin-test' ) }
+					</p>
+				</CardContent>
+			</Card>
 		</div>
+	</div>
 	);
 };
 
