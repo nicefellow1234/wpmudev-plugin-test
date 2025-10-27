@@ -63,6 +63,96 @@ class Drive_API extends Base {
 	}
 
 	/**
+	 * Rename a Drive file or folder.
+	 *
+	 * @param WP_REST_Request $request Request instance.
+	 *
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public function rename_file( WP_REST_Request $request ) {
+		if ( ! $this->ensure_valid_token() ) {
+			return new WP_Error(
+				'no_access_token',
+				__( 'Authenticate with Google Drive to continue.', 'wpmudev-plugin-test' ),
+				array( 'status' => 401 )
+			);
+		}
+
+		$file_id = sanitize_text_field( (string) $request->get_param( 'file_id' ) );
+		$new_name = sanitize_text_field( (string) $request->get_param( 'name' ) );
+
+		if ( empty( $file_id ) || '' === $new_name ) {
+			return new WP_Error(
+				'invalid_parameters',
+				__( 'A file and a new name are required to rename items.', 'wpmudev-plugin-test' ),
+				array( 'status' => 400 )
+			);
+		}
+
+		try {
+			$drive_file = new Google_Service_Drive_DriveFile();
+			$drive_file->setName( $new_name );
+
+			$result = $this->drive_service->files->update(
+				$file_id,
+				$drive_file,
+				array(
+					'fields' => 'id,name,mimeType,size,modifiedTime,webViewLink,iconLink,thumbnailLink,hasThumbnail,parents,capabilities(canRename,canDelete,canTrash)',
+				)
+			);
+		} catch ( Exception $e ) {
+			return new WP_Error( 'rename_failed', $e->getMessage(), array( 'status' => 500 ) );
+		}
+
+		return new WP_REST_Response(
+			array(
+				'success' => true,
+				'file'    => $this->format_drive_file( $result ),
+			)
+		);
+	}
+
+	/**
+	 * Delete (trash) a Drive file or folder.
+	 *
+	 * @param WP_REST_Request $request Request instance.
+	 *
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public function delete_file( WP_REST_Request $request ) {
+		if ( ! $this->ensure_valid_token() ) {
+			return new WP_Error(
+				'no_access_token',
+				__( 'Authenticate with Google Drive to continue.', 'wpmudev-plugin-test' ),
+				array( 'status' => 401 )
+			);
+		}
+
+		$file_id = sanitize_text_field( (string) $request->get_param( 'file_id' ) );
+		if ( empty( $file_id ) ) {
+			return new WP_Error(
+				'invalid_parameters',
+				__( 'A file ID is required.', 'wpmudev-plugin-test' ),
+				array( 'status' => 400 )
+			);
+		}
+
+		try {
+			$this->drive_service->files->delete( $file_id );
+		} catch ( Exception $e ) {
+			return new WP_Error( 'delete_failed', $e->getMessage(), array( 'status' => 500 ) );
+		}
+
+		return new WP_REST_Response(
+			array(
+				'success' => true,
+				'file_id' => $file_id,
+			)
+		);
+	}
+
+	/**
+	 * Re/initialize Google client.
 	 * List of required scopes.
 	 *
 	 * @return array
@@ -153,18 +243,22 @@ class Drive_API extends Base {
 							'type'              => 'string',
 							'sanitize_callback' => 'sanitize_text_field',
 						),
-						'folder_id'  => array(
-							'type'              => 'string',
-							'sanitize_callback' => 'sanitize_text_field',
-						),
-						'search'     => array(
-							'type'              => 'string',
-							'sanitize_callback' => 'sanitize_text_field',
-						),
-					),
+				'folder_id'  => array(
+					'type'              => 'string',
+					'sanitize_callback' => 'sanitize_text_field',
 				),
-			)
-		);
+				'search'     => array(
+					'type'              => 'string',
+					'sanitize_callback' => 'sanitize_text_field',
+				),
+				'order'      => array(
+					'type'              => 'string',
+					'sanitize_callback' => 'sanitize_text_field',
+				),
+			),
+		),
+	)
+);
 
 		register_rest_route(
 			'wpmudev/v1/drive',
@@ -213,6 +307,49 @@ class Drive_API extends Base {
 						),
 						'parent_id' => array(
 							'type'              => 'string',
+							'sanitize_callback' => 'sanitize_text_field',
+						),
+					),
+				),
+			)
+		);
+
+		register_rest_route(
+			'wpmudev/v1/drive',
+			'/rename',
+			array(
+				array(
+					'methods'             => WP_REST_Server::CREATABLE,
+					'callback'            => array( $this, 'rename_file' ),
+					'permission_callback' => array( $this, 'check_manage_permissions' ),
+					'args'                => array(
+						'file_id' => array(
+							'type'              => 'string',
+							'required'          => true,
+							'sanitize_callback' => 'sanitize_text_field',
+						),
+						'name'    => array(
+							'type'              => 'string',
+							'required'          => true,
+							'sanitize_callback' => 'sanitize_text_field',
+						),
+					),
+				),
+			)
+		);
+
+		register_rest_route(
+			'wpmudev/v1/drive',
+			'/delete',
+			array(
+				array(
+					'methods'             => WP_REST_Server::DELETABLE,
+					'callback'            => array( $this, 'delete_file' ),
+					'permission_callback' => array( $this, 'check_manage_permissions' ),
+					'args'                => array(
+						'file_id' => array(
+							'type'              => 'string',
+							'required'          => true,
 							'sanitize_callback' => 'sanitize_text_field',
 						),
 					),
@@ -402,12 +539,19 @@ class Drive_API extends Base {
 			$query_parts[] = sprintf( "name contains '%s'", $search_term );
 		}
 
-		$options = array(
-			'q'       => implode( ' and ', $query_parts ),
-			'pageSize'=> $page_size,
-			'fields'  => 'files(id,name,mimeType,size,modifiedTime,webViewLink),nextPageToken',
-			'orderBy' => 'folder,name',
-		);
+	$order_param = strtolower( sanitize_text_field( (string) $request->get_param( 'order' ) ) );
+	$order_by    = 'modifiedTime desc';
+
+	if ( in_array( $order_param, array( 'asc', 'oldest', 'modified_asc' ), true ) ) {
+		$order_by = 'modifiedTime asc';
+	}
+
+	$options = array(
+		'q'       => implode( ' and ', $query_parts ),
+		'pageSize'=> $page_size,
+		'fields'  => 'files(id,name,mimeType,size,modifiedTime,webViewLink,iconLink,thumbnailLink,hasThumbnail,parents,capabilities(canRename,canDelete,canTrash)),nextPageToken',
+		'orderBy' => $order_by,
+	);
 
 		if ( $page_token ) {
 			$options['pageToken'] = $page_token;
@@ -425,14 +569,7 @@ class Drive_API extends Base {
 
 		$files = array();
 		foreach ( (array) $results->getFiles() as $file ) {
-			$files[] = array(
-				'id'           => $file->getId(),
-				'name'         => $file->getName(),
-				'mimeType'     => $file->getMimeType(),
-				'size'         => $file->getSize(),
-				'modifiedTime' => $file->getModifiedTime(),
-				'webViewLink'  => $file->getWebViewLink(),
-			);
+			$files[] = $this->format_drive_file( $file );
 		}
 
 		return new WP_REST_Response(
@@ -485,7 +622,7 @@ class Drive_API extends Base {
 					'data'       => file_get_contents( $file['tmp_name'] ),
 					'mimeType'   => $file['type'] ?: 'application/octet-stream',
 					'uploadType' => 'multipart',
-					'fields'     => 'id,name,mimeType,size,webViewLink',
+					'fields'     => 'id,name,mimeType,size,modifiedTime,webViewLink,iconLink,thumbnailLink,hasThumbnail,parents,capabilities(canRename,canDelete,canTrash)',
 				)
 			);
 		} catch ( Exception $e ) {
@@ -495,13 +632,7 @@ class Drive_API extends Base {
 		return new WP_REST_Response(
 			array(
 				'success' => true,
-				'file'    => array(
-					'id'          => $result->getId(),
-					'name'        => $result->getName(),
-					'mimeType'    => $result->getMimeType(),
-					'size'        => $result->getSize(),
-					'webViewLink' => $result->getWebViewLink(),
-				),
+				'file'    => $this->format_drive_file( $result ),
 			)
 		);
 	}
@@ -592,7 +723,7 @@ class Drive_API extends Base {
 			$result = $this->drive_service->files->create(
 				$folder,
 				array(
-					'fields' => 'id,name,mimeType,webViewLink',
+					'fields' => 'id,name,mimeType,size,modifiedTime,webViewLink,iconLink,thumbnailLink,hasThumbnail,parents,capabilities(canRename,canDelete,canTrash)',
 				)
 			);
 		} catch ( Exception $e ) {
@@ -602,13 +733,37 @@ class Drive_API extends Base {
 		return new WP_REST_Response(
 			array(
 				'success' => true,
-				'folder'  => array(
-					'id'          => $result->getId(),
-					'name'        => $result->getName(),
-					'mimeType'    => $result->getMimeType(),
-					'webViewLink' => $result->getWebViewLink(),
-				),
+				'folder'  => $this->format_drive_file( $result ),
 			)
+		);
+	}
+
+	/**
+	 * Normalise Google Drive file payload to consistent array.
+	 *
+	 * @param Google_Service_Drive_DriveFile $file Drive file instance.
+	 *
+	 * @return array
+	 */
+	private function format_drive_file( Google_Service_Drive_DriveFile $file ): array {
+		$capabilities = method_exists( $file, 'getCapabilities' ) ? $file->getCapabilities() : null;
+
+		return array(
+			'id'            => $file->getId(),
+			'name'          => $file->getName(),
+			'mimeType'      => $file->getMimeType(),
+			'size'          => $file->getSize(),
+			'modifiedTime'  => $file->getModifiedTime(),
+			'webViewLink'   => $file->getWebViewLink(),
+			'iconLink'      => $file->getIconLink(),
+			'thumbnailLink' => method_exists( $file, 'getThumbnailLink' ) ? $file->getThumbnailLink() : '',
+			'hasThumbnail'  => method_exists( $file, 'getHasThumbnail' ) ? (bool) $file->getHasThumbnail() : false,
+			'parents'       => (array) $file->getParents(),
+			'capabilities'  => array(
+				'canRename' => $capabilities && method_exists( $capabilities, 'getCanRename' ) ? (bool) $capabilities->getCanRename() : false,
+				'canDelete' => $capabilities && method_exists( $capabilities, 'getCanDelete' ) ? (bool) $capabilities->getCanDelete() : false,
+				'canTrash'  => $capabilities && method_exists( $capabilities, 'getCanTrash' ) ? (bool) $capabilities->getCanTrash() : false,
+			),
 		);
 	}
 

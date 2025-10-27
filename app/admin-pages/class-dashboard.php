@@ -87,6 +87,12 @@ class Dashboard extends Base {
 				<?php esc_html_e( 'Quick access to the plugin settings, maintenance routines, and Google Drive integration.', 'wpmudev-plugin-test' ); ?>
 			</p>
 
+			<?php if ( $this->google_ready && $this->google_error ) : ?>
+				<div class="notice notice-warning">
+					<p><?php echo esc_html( $this->google_error ); ?></p>
+				</div>
+			<?php endif; ?>
+
 			<?php if ( ! $this->google_ready ) : ?>
 				<div class="notice notice-error">
 					<p>
