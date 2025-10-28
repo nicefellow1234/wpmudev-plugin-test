@@ -40,6 +40,42 @@ This keeps deployments lean without sacrificing any required functionality or th
 - Choose which public post types to scan, watch live progress, cancel scans, and review the last run history.
 - Background jobs chunk work into small batches via WP-Cron while storing progress in `wpmudev_posts_maintenance_job`.
 - A daily event (`wpmudev_posts_maintenance_daily`) automatically reuses your saved filters.
+- Recent cron runs are stored in history (latest 10 entries) so you can audit automation activity.
+
+#### Automation Setup (admin UI)
+1. Navigate to **WP Admin → Posts Maintenance**.
+2. Under **Automation Schedule**, toggle **Enable daily WP-Cron task** on.
+3. (Optional) Toggle **Run multiple times per day** and add up to six HH:MM slots (site timezone).  
+   Times entered in the UI are saved exactly and displayed using the site timezone + am/pm formatting.
+4. Click **Save Automation Settings** – this persists post-type filters, cron enablement, and time slots.
+
+The UI shows a live “Recent WP-Cron Runs” list so you can confirm the automation keeps firing once server-side cron is configured.
+
+#### Server Cron Requirements
+WordPress only executes scheduled batches when `wp-cron.php` (or `wp cron event run`) is triggered. Configure a system-level cron for the web user. Example (runs every 6 seconds via multiple staggered jobs):
+
+```
+* * * * * cd /data/apps/php/canvas-symfony5/public/blog && wp cron event run --due-now --allow-root >/dev/null 2>&1
+* * * * * sleep 6  && cd /data/apps/php/canvas-symfony5/public/blog && wp cron event run --due-now --allow-root >/dev/null 2>&1
+* * * * * sleep 12 && cd /data/apps/php/canvas-symfony5/public/blog && wp cron event run --due-now --allow-root >/dev/null 2>&1
+* * * * * sleep 18 && cd /data/apps/php/canvas-symfony5/public/blog && wp cron event run --due-now --allow-root >/dev/null 2>&1
+* * * * * sleep 24 && cd /data/apps/php/canvas-symfony5/public/blog && wp cron event run --due-now --allow-root >/dev/null 2>&1
+* * * * * sleep 30 && cd /data/apps/php/canvas-symfony5/public/blog && wp cron event run --due-now --allow-root >/dev/null 2>&1
+* * * * * sleep 36 && cd /data/apps/php/canvas-symfony5/public/blog && wp cron event run --due-now --allow-root >/dev/null 2>&1
+* * * * * sleep 42 && cd /data/apps/php/canvas-symfony5/public/blog && wp cron event run --due-now --allow-root >/dev/null 2>&1
+* * * * * sleep 48 && cd /data/apps/php/canvas-symfony5/public/blog && wp cron event run --due-now --allow-root >/dev/null 2>&1
+* * * * * sleep 54 && cd /data/apps/php/canvas-symfony5/public/blog && wp cron event run --due-now --allow-root >/dev/null 2>&1
+```
+
+Guidelines:
+- Keep `DISABLE_WP_CRON` unset/false so WordPress can spawn emergency runs during web requests.
+- If you prefer another schedule, ensure the highest frequency matches your desired throughput (each run processes one batch; default batch size is 200 items).
+- Running inside Docker? Add the cron entries to the container and ensure `cron`/`crond` is started.
+
+#### Troubleshooting
+- **Queued, never progresses** – the plugin now automatically clears stale `_transient_doing_cron` locks and reschedules the worker on every `init`. Make sure the site receives cron triggers (see above). You can still manually clear the lock via `wp option delete _transient_doing_cron`.
+- **Finished too early** – when changing batch size, let the current job finish or cancel/reset first. The worker now stores batch size per job to avoid page-skipping caused by mid-run changes.
+- **Audit recent runs** – use the “Recent WP-Cron Runs” panel or run `wp option get wpmudev_posts_maintenance_cron_history --format=json` to inspect the last 10 automation executions.
 
 #### WP-CLI
 Run the same maintenance routine without opening the admin UI:

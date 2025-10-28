@@ -7,6 +7,7 @@ class Test_Posts_Maintenance extends WP_UnitTestCase {
 		delete_option( 'wpmudev_posts_maintenance_job' );
 		delete_option( 'wpmudev_posts_maintenance_settings' );
 		delete_option( 'wpmudev_posts_maintenance_last_run' );
+		delete_option( 'wpmudev_posts_maintenance_cron_history' );
 		wp_clear_scheduled_hook( \WPMUDEV\PluginTest\App\Posts_Maintenance\Manager::DAILY_HOOK );
 	}
 

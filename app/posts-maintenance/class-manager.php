@@ -23,8 +23,10 @@ class Manager extends Base {
 	const LAST_RUN_OPTION = 'wpmudev_posts_maintenance_last_run';
 	const CRON_HOOK       = 'wpmudev_posts_maintenance_process';
 	const DAILY_HOOK      = 'wpmudev_posts_maintenance_daily';
-	const BATCH_SIZE      = 25;
+	const BATCH_SIZE      = 200;
 	const MAX_CRON_RUNS   = 6;
+	const CRON_HISTORY_OPTION = 'wpmudev_posts_maintenance_cron_history';
+	const MAX_CRON_HISTORY    = 10;
 
 	/**
 	 * Whether we are currently processing inline (synchronously).
@@ -46,6 +48,7 @@ class Manager extends Base {
 		add_action( self::CRON_HOOK, array( $this, 'process_queue' ) );
 		add_action( self::DAILY_HOOK, array( $this, 'handle_daily_event' ), 10, 1 );
 		add_action( 'init', array( $this, 'maybe_schedule_daily' ) );
+		add_action( 'init', array( $this, 'maybe_resume_pending_job' ), 20 );
 	}
 
 	/**
@@ -103,6 +106,7 @@ class Manager extends Base {
 		$this->save_job( $job );
 
 		if ( $total > 0 ) {
+			$this->maybe_clear_stale_cron_lock();
 			if ( $this->should_process_inline_immediately() && ! $prefer_async ) {
 				$this->run_inline_until_complete();
 			} else {
@@ -157,10 +161,12 @@ class Manager extends Base {
 	 */
 	public function get_status(): array {
 		return array(
-			'job'       => $this->get_current_job(),
-			'settings'  => $this->get_settings(),
-			'last_run'  => get_option( self::LAST_RUN_OPTION, array() ),
-			'postTypes' => $this->get_available_post_types(),
+			'job'         => $this->get_current_job(),
+			'settings'    => $this->get_settings(),
+			'last_run'    => get_option( self::LAST_RUN_OPTION, array() ),
+			'postTypes'   => $this->get_available_post_types(),
+			'cron_events' => $this->get_cron_events(),
+			'cron_history' => $this->get_cron_history(),
 		);
 	}
 
@@ -182,7 +188,11 @@ class Manager extends Base {
 		$job['status']    = 'running';
 		$job['updated_at'] = time();
 
-		$query = $this->query_posts( $job['post_types'], $job['batch']['page'], self::BATCH_SIZE );
+		$per_page = isset( $job['batch']['per_page'] ) && $job['batch']['per_page'] > 0
+			? (int) $job['batch']['per_page']
+			: self::BATCH_SIZE;
+
+		$query = $this->query_posts( $job['post_types'], $job['batch']['page'], $per_page );
 		$ids   = $query->posts;
 
 		foreach ( $ids as $post_id ) {
@@ -219,10 +229,22 @@ class Manager extends Base {
 
 			$this->save_job( $job );
 
+			if ( ! empty( $job['cron_run_id'] ) ) {
+				$this->update_cron_history_entry(
+					$job['cron_run_id'],
+					array(
+						'status'       => 'completed',
+						'completed_at' => $job['completed_at'],
+						'processed'    => $job['processed'],
+					)
+				);
+			}
+
 			return;
 		}
 
 		$job['batch']['page'] ++;
+		$job['batch']['per_page'] = $per_page;
 		$job['message'] = sprintf(
 			/* translators: 1: processed posts, 2: total posts */
 			__( 'Processed %1$d of %2$d posts...', 'wpmudev-plugin-test' ),
@@ -305,7 +327,7 @@ class Manager extends Base {
 	/**
 	 * Triggered by WP-Cron daily schedule.
 	 */
-	public function handle_daily_event( $args = array() ) {
+	public function handle_daily_event( $slot = '', $args = array() ) {
 		$settings = $this->get_settings();
 		if ( empty( $settings['cron_enabled'] ) ) {
 			return;
@@ -315,9 +337,47 @@ class Manager extends Base {
 			return;
 		}
 
+		if ( is_array( $slot ) ) {
+			$args = $slot;
+			$slot = '';
+		}
+
+		if ( empty( $slot ) && is_array( $args ) && isset( $args['slot'] ) ) {
+			$slot = $args['slot'];
+		}
+
+		if ( ! is_string( $slot ) ) {
+			$slot = '';
+		}
+
+		$slot       = '' !== $slot ? $this->sanitize_time( $slot ) : '';
 		$post_types = ! empty( $settings['post_types'] ) ? $settings['post_types'] : $this->get_default_post_types();
 
-		$this->start_job( $post_types );
+		$result = $this->start_job( $post_types );
+
+		if ( is_wp_error( $result ) ) {
+			return;
+		}
+
+		if ( ! is_array( $result ) ) {
+			return;
+		}
+
+		$run_id              = $this->record_cron_history_start( $result, $slot );
+		$result['cron_run_id'] = $run_id;
+
+		$this->save_job( $result );
+
+		if ( 'completed' === ( $result['status'] ?? '' ) ) {
+			$this->update_cron_history_entry(
+				$run_id,
+				array(
+					'status'       => 'completed',
+					'completed_at' => $result['completed_at'] ?? time(),
+					'processed'    => $result['processed'] ?? 0,
+				)
+			);
+		}
 	}
 
 	/**
@@ -406,6 +466,16 @@ class Manager extends Base {
 		}
 
 		update_option( self::JOB_OPTION, $job, false );
+
+		if ( ! empty( $job['cron_run_id'] ) ) {
+			$this->update_cron_history_entry(
+				$job['cron_run_id'],
+				array(
+					'status'    => $job['status'] ?? 'pending',
+					'processed' => $job['processed'] ?? 0,
+				)
+			);
+		}
 	}
 
 	/**
@@ -437,7 +507,19 @@ class Manager extends Base {
 	 * @return void
 	 */
 	public function clear_job() {
+		$job = $this->get_current_job();
+
 		delete_option( self::JOB_OPTION );
+
+		if ( ! empty( $job['cron_run_id'] ) ) {
+			$this->update_cron_history_entry(
+				$job['cron_run_id'],
+				array(
+					'status'       => 'reset',
+					'completed_at' => time(),
+				)
+			);
+		}
 	}
 
 	/**
@@ -454,6 +536,17 @@ class Manager extends Base {
 		$job['message']          = __( 'Scan cancelled by user.', 'wpmudev-plugin-test' );
 
 		$this->save_job( $job );
+
+		if ( ! empty( $job['cron_run_id'] ) ) {
+			$this->update_cron_history_entry(
+				$job['cron_run_id'],
+				array(
+					'status'       => 'cancelled',
+					'completed_at' => $job['completed_at'],
+					'processed'    => $job['processed'] ?? 0,
+				)
+			);
+		}
 	}
 
 	/**
@@ -496,6 +589,330 @@ class Manager extends Base {
 	}
 
 	/**
+	 * List upcoming WP-Cron executions for the maintenance job.
+	 *
+	 * @return array
+	 */
+	public function get_cron_events(): array {
+		$events = array();
+		$cron   = _get_cron_array();
+
+		if ( empty( $cron ) ) {
+			return $events;
+		}
+
+		$timezone      = wp_timezone();
+		$timezone_name = wp_timezone_string() ? wp_timezone_string() : 'UTC';
+		$now           = time();
+
+		foreach ( $cron as $timestamp => $hooks ) {
+			if ( empty( $hooks[ self::DAILY_HOOK ] ) ) {
+				continue;
+			}
+
+			foreach ( $hooks[ self::DAILY_HOOK ] as $event ) {
+				$args = is_array( $event['args'] ) ? reset( $event['args'] ) : array();
+				$slot = empty( $args['slot'] ) ? '' : $this->sanitize_time( (string) $args['slot'] );
+
+				$events[] = array(
+					'timestamp' => (int) $timestamp,
+					'slot'      => $slot,
+					'local'     => wp_date( 'Y-m-d g:i a', $timestamp, $timezone ),
+					'timezone'  => $timezone_name,
+					'relative'  => $timestamp >= $now
+						? sprintf(
+							/* translators: %s - human readable time difference */
+							__( 'In %s', 'wpmudev-plugin-test' ),
+							human_time_diff( $now, $timestamp )
+						)
+						: sprintf(
+							/* translators: %s - human readable time difference */
+							__( '%s ago', 'wpmudev-plugin-test' ),
+							human_time_diff( $timestamp, $now )
+						),
+				);
+			}
+		}
+
+		usort(
+			$events,
+			static function ( $a, $b ) {
+				return $a['timestamp'] <=> $b['timestamp'];
+			}
+		);
+
+		return $events;
+	}
+
+	/**
+	 * Retrieve stored cron history entries.
+	 *
+	 * @return array
+	 */
+	private function get_cron_history_store(): array {
+		$history = get_option( self::CRON_HISTORY_OPTION, array() );
+
+		return is_array( $history ) ? $history : array();
+	}
+
+	/**
+	 * Persist cron history entries.
+	 *
+	 * @param array $history Entries to store.
+	 *
+	 * @return void
+	 */
+	private function persist_cron_history( array $history ) {
+		update_option( self::CRON_HISTORY_OPTION, array_values( $history ), false );
+	}
+
+	/**
+	 * Record a newly triggered cron run.
+	 *
+	 * @param array  $job  Job data.
+	 * @param string $slot Slot string (HH:MM).
+	 *
+	 * @return string Run identifier.
+	 */
+	private function record_cron_history_start( array $job, string $slot ): string {
+		$history        = $this->get_cron_history_store();
+		$timestamp      = time();
+		$scheduled_for  = null;
+		$normalizedSlot = '';
+
+		if ( ! empty( $slot ) ) {
+			$normalizedSlot = $this->sanitize_time( $slot );
+			$scheduled_for  = $this->estimate_previous_slot_timestamp( $normalizedSlot );
+		}
+
+		$entry = array(
+			'run_id'        => uniqid( 'cron_run_', true ),
+			'job_id'        => $job['job_id'] ?? '',
+			'slot'          => $normalizedSlot,
+			'scheduled_for' => $scheduled_for,
+			'triggered_at'  => $timestamp,
+			'status'        => 'pending',
+			'processed'     => 0,
+		);
+
+		array_unshift( $history, $entry );
+
+		if ( count( $history ) > self::MAX_CRON_HISTORY ) {
+			$history = array_slice( $history, 0, self::MAX_CRON_HISTORY );
+		}
+
+		$this->persist_cron_history( $history );
+
+		return $entry['run_id'];
+	}
+
+	/**
+	 * Update stored cron history entry.
+	 *
+	 * @param string $run_id  Run identifier.
+	 * @param array  $changes Values to merge.
+	 *
+	 * @return void
+	 */
+	private function update_cron_history_entry( string $run_id, array $changes ): void {
+		if ( empty( $run_id ) ) {
+			return;
+		}
+
+		$history = $this->get_cron_history_store();
+		$updated = false;
+
+		foreach ( $history as $index => $entry ) {
+			if ( empty( $entry['run_id'] ) || $entry['run_id'] !== $run_id ) {
+				continue;
+			}
+
+			$history[ $index ]             = array_merge( $entry, $changes );
+			$history[ $index ]['processed'] = isset( $history[ $index ]['processed'] ) ? (int) $history[ $index ]['processed'] : 0;
+			$history[ $index ]['updated_at'] = time();
+			$updated                        = true;
+			break;
+		}
+
+		if ( $updated ) {
+			$this->persist_cron_history( $history );
+		}
+	}
+
+	/**
+	 * Public accessor for cron history (formatted).
+	 *
+	 * @return array
+	 */
+	public function get_cron_history(): array {
+		$history = $this->get_cron_history_store();
+
+		if ( empty( $history ) ) {
+			return array();
+		}
+
+		$timezone = wp_timezone();
+		$now      = time();
+
+		return array_map(
+			function ( $entry ) use ( $timezone, $now ) {
+				$scheduled = ! empty( $entry['scheduled_for'] ) ? (int) $entry['scheduled_for'] : null;
+				$triggered = ! empty( $entry['triggered_at'] ) ? (int) $entry['triggered_at'] : null;
+				$completed = ! empty( $entry['completed_at'] ) ? (int) $entry['completed_at'] : null;
+
+				return array(
+					'run_id'          => $entry['run_id'],
+					'job_id'          => $entry['job_id'] ?? '',
+					'slot'            => $entry['slot'] ?? '',
+					'status'          => $entry['status'] ?? 'pending',
+					'status_label'    => $this->get_cron_history_status_label( $entry['status'] ?? 'pending' ),
+					'scheduled_for'   => $scheduled,
+					'scheduled_local' => $scheduled ? wp_date( 'Y-m-d g:i a', $scheduled, $timezone ) : '',
+					'triggered_at'    => $triggered,
+					'triggered_local' => $triggered ? wp_date( 'Y-m-d g:i a', $triggered, $timezone ) : '',
+					'completed_at'    => $completed,
+					'completed_local' => $completed ? wp_date( 'Y-m-d g:i a', $completed, $timezone ) : '',
+					'processed'       => isset( $entry['processed'] ) ? (int) $entry['processed'] : 0,
+					'relative'        => $this->get_cron_history_relative( $entry, $now ),
+				);
+			},
+			$history
+		);
+	}
+
+	/**
+	 * Convert status slug to label.
+	 *
+	 * @param string $status Status key.
+	 *
+	 * @return string
+	 */
+	private function get_cron_history_status_label( string $status ): string {
+		switch ( $status ) {
+			case 'running':
+				return __( 'Running', 'wpmudev-plugin-test' );
+			case 'completed':
+				return __( 'Completed', 'wpmudev-plugin-test' );
+			case 'cancelled':
+				return __( 'Cancelled', 'wpmudev-plugin-test' );
+			case 'failed':
+				return __( 'Failed', 'wpmudev-plugin-test' );
+			case 'reset':
+				return __( 'Reset', 'wpmudev-plugin-test' );
+			case 'pending':
+			default:
+				return __( 'Pending', 'wpmudev-plugin-test' );
+		}
+	}
+
+	/**
+	 * Build a relative description for a cron history entry.
+	 *
+	 * @param array $entry Entry data.
+	 * @param int   $now   Current timestamp.
+	 *
+	 * @return string
+	 */
+	private function get_cron_history_relative( array $entry, int $now ): string {
+		if ( ! empty( $entry['completed_at'] ) ) {
+			$status = $entry['status'] ?? 'completed';
+			$diff   = human_time_diff( (int) $entry['completed_at'], $now );
+
+			switch ( $status ) {
+				case 'cancelled':
+					return sprintf( __( 'Cancelled %s ago', 'wpmudev-plugin-test' ), $diff );
+				case 'failed':
+					return sprintf( __( 'Failed %s ago', 'wpmudev-plugin-test' ), $diff );
+				case 'reset':
+					return sprintf( __( 'Reset %s ago', 'wpmudev-plugin-test' ), $diff );
+				default:
+					return sprintf( __( 'Completed %s ago', 'wpmudev-plugin-test' ), $diff );
+			}
+		}
+
+		if ( ! empty( $entry['status'] ) && 'running' === $entry['status'] && ! empty( $entry['triggered_at'] ) ) {
+			return sprintf(
+				/* translators: %s - human readable time difference */
+				__( 'Started %s ago', 'wpmudev-plugin-test' ),
+				human_time_diff( (int) $entry['triggered_at'], $now )
+			);
+		}
+
+		if ( ! empty( $entry['scheduled_for'] ) ) {
+			$scheduled = (int) $entry['scheduled_for'];
+
+			if ( $scheduled > $now ) {
+				return sprintf(
+					/* translators: %s - human readable time difference */
+					__( 'Scheduled in %s', 'wpmudev-plugin-test' ),
+					human_time_diff( $now, $scheduled )
+				);
+			}
+
+			return sprintf(
+				/* translators: %s - human readable time difference */
+				__( 'Scheduled %s ago', 'wpmudev-plugin-test' ),
+				human_time_diff( $scheduled, $now )
+			);
+		}
+
+		return '';
+	}
+
+	/**
+	 * Estimate latest occurrence of a slot before now.
+	 *
+	 * @param string $slot Time in HH:MM.
+	 *
+	 * @return int|null
+	 */
+	private function estimate_previous_slot_timestamp( string $slot ) {
+		if ( empty( $slot ) ) {
+			return null;
+		}
+
+		list( $hours, $minutes ) = array_map( 'intval', explode( ':', $slot ) + array( 0, 0 ) );
+		$timezone                = wp_timezone();
+		$now                     = new \DateTimeImmutable( 'now', $timezone );
+		$candidate               = $now->setTime( $hours, $minutes, 0 );
+
+		if ( $candidate > $now ) {
+			$candidate = $candidate->modify( '-1 day' );
+		}
+
+		return $candidate->getTimestamp();
+	}
+
+	public function delete_cron_event( int $timestamp, string $slot = '' ): bool {
+		$timestamp = absint( $timestamp );
+		if ( $timestamp <= 0 ) {
+			return false;
+		}
+
+		$cron = _get_cron_array();
+		if ( empty( $cron[ $timestamp ][ self::DAILY_HOOK ] ) ) {
+			return false;
+		}
+
+		$slot = '' !== $slot ? $this->sanitize_time( sanitize_text_field( $slot ) ) : '';
+
+		foreach ( $cron[ $timestamp ][ self::DAILY_HOOK ] as $event ) {
+			$args       = is_array( $event['args'] ) ? reset( $event['args'] ) : array();
+			$event_slot = empty( $args['slot'] ) ? '' : $this->sanitize_time( (string) $args['slot'] );
+
+			if ( '' !== $slot && $event_slot !== $slot ) {
+				continue;
+			}
+
+			wp_unschedule_event( $timestamp, self::DAILY_HOOK, $event['args'] );
+
+			return true;
+		}
+
+		return false;
+	}
+
+	/**
 	 * Whether a job is pending or running.
 	 *
 	 * @return bool
@@ -510,6 +927,8 @@ class Manager extends Base {
 	 * Schedule background runner.
 	 */
 	private function queue_processing() {
+		$this->maybe_clear_stale_cron_lock();
+
 		if ( ! wp_next_scheduled( self::CRON_HOOK ) ) {
 			wp_schedule_single_event( time() + 5, self::CRON_HOOK );
 		}
@@ -591,17 +1010,72 @@ class Manager extends Base {
 		return ( defined( 'DISABLE_WP_CRON' ) && DISABLE_WP_CRON );
 	}
 
+	/**
+	 * Remove stale cron locks so scheduled events can run again.
+	 *
+	 * @return void
+	 */
+	private function maybe_clear_stale_cron_lock(): void {
+		$lock = get_option( '_transient_doing_cron' );
+
+		if ( empty( $lock ) ) {
+			return;
+		}
+
+		$timestamp = (float) $lock;
+
+		if ( $timestamp <= 0 ) {
+			return;
+		}
+
+		// If the lock is older than 60 seconds consider it stale.
+		if ( $timestamp < ( microtime( true ) - 60 ) ) {
+			delete_option( '_transient_doing_cron' );
+		}
+	}
+
+	/**
+	 * Ensure there is always a worker scheduled for pending jobs.
+	 *
+	 * @return void
+	 */
+	public function maybe_resume_pending_job(): void {
+		if ( wp_next_scheduled( self::CRON_HOOK ) ) {
+			return;
+		}
+
+		$job = $this->get_current_job();
+
+		if ( empty( $job ) ) {
+			return;
+		}
+
+		$status = isset( $job['status'] ) ? $job['status'] : '';
+
+		if ( ! in_array( $status, array( 'pending', 'running' ), true ) ) {
+			return;
+		}
+
+		$this->maybe_clear_stale_cron_lock();
+
+		if ( ! wp_next_scheduled( self::CRON_HOOK ) ) {
+			wp_schedule_single_event( time() + 5, self::CRON_HOOK );
+		}
+	}
+
 	private function next_cron_timestamp( string $time ): int {
 		list( $hours, $minutes ) = array_map( 'intval', explode( ':', $time ) + array( 0, 0 ) );
 
-		$now      = current_time( 'timestamp' );
-		$next_run = mktime( $hours, $minutes, 0, date( 'n', $now ), date( 'j', $now ), date( 'Y', $now ) );
+		$timezone = wp_timezone();
+		$now      = new \DateTimeImmutable( 'now', $timezone );
+
+		$next_run = $now->setTime( $hours, $minutes, 0 );
 
 		if ( $next_run <= $now ) {
-			$next_run = strtotime( '+1 day', $next_run );
+			$next_run = $next_run->modify( '+1 day' );
 		}
 
-		return $next_run;
+		return $next_run->getTimestamp();
 	}
 
 	private function sanitize_time( string $time ): string {

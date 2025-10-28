@@ -118,6 +118,27 @@ class Posts_Maintenance_API extends Base {
 				),
 			)
 		);
+
+		register_rest_route(
+			'wpmudev/v1/posts-maintenance',
+			'/cron/delete',
+			array(
+				array(
+					'methods'             => WP_REST_Server::DELETABLE,
+					'permission_callback' => array( $this, 'check_permissions' ),
+					'callback'            => array( $this, 'delete_cron_event' ),
+					'args'                => array(
+						'timestamp' => array(
+							'type'     => 'integer',
+							'required' => true,
+						),
+						'slot'      => array(
+							'type' => 'string',
+						),
+					),
+				),
+			)
+		);
 	}
 
 	/**
@@ -210,6 +231,26 @@ class Posts_Maintenance_API extends Base {
 			array(
 				'success'  => true,
 				'settings' => $manager->get_settings(),
+				'cron_events' => $manager->get_cron_events(),
+				'cron_history' => $manager->get_cron_history(),
+			)
+		);
+	}
+
+	public function delete_cron_event( WP_REST_Request $request ) {
+		$timestamp = absint( $request->get_param( 'timestamp' ) );
+		$slot      = (string) $request->get_param( 'slot' );
+
+		$manager = Manager::instance();
+
+		if ( ! $manager->delete_cron_event( $timestamp, $slot ) ) {
+			return new WP_Error( 'wpmudev_cron_delete_failed', __( 'Unable to remove the scheduled run.', 'wpmudev-plugin-test' ), array( 'status' => 400 ) );
+		}
+
+		return new WP_REST_Response(
+			array(
+				'success' => true,
+				'events'  => $manager->get_cron_events(),
 			)
 		);
 	}

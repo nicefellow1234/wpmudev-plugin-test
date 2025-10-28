@@ -114,12 +114,35 @@ const getNextSuggestedTime = ( times = [] ) => {
 	return `${ nextHour }:${ nextMinute }`;
 };
 
-const formatCronSummary = ( times = [] ) => {
-	if ( ! times.length ) {
-		return '00:00';
+const formatTimeForDisplay = ( value = '00:00' ) => {
+	if ( typeof value !== 'string' ) {
+		return value;
 	}
 
-	return times.join( ', ' );
+	const match = value.match( /^(\d{1,2}):(\d{2})$/ );
+
+	if ( ! match ) {
+		return value;
+	}
+
+	let hours = parseInt( match[1], 10 );
+	const minutes = match[2];
+	const period = hours >= 12 ? __( 'pm', 'wpmudev-plugin-test' ) : __( 'am', 'wpmudev-plugin-test' );
+
+	hours = hours % 12;
+	if ( hours === 0 ) {
+		hours = 12;
+	}
+
+	return hours + ':' + minutes + ' ' + period;
+};
+
+const formatCronSummary = ( times = [] ) => {
+	if ( ! times.length ) {
+		return formatTimeForDisplay( '00:00' );
+	}
+
+	return times.map( formatTimeForDisplay ).join( ', ' );
 };
 
 const arraysMatch = ( first = [], second = [] ) => {
@@ -182,8 +205,10 @@ const App = () => {
 	const [ selectedTypes, setSelectedTypes ] = useState( initialSelection );
 	const [ cronEnabled, setCronEnabled ] = useState( initialStatus.settings?.cron_enabled ?? true );
 	const [ cronTimes, setCronTimes ] = useState( getInitialCronTimes( initialStatus ) );
+	const [ cronEvents, setCronEvents ] = useState( initialStatus.cron_events || [] );
+	const [ cronHistory, setCronHistory ] = useState( initialStatus.cron_history || [] );
+	const [ removingEventId, setRemovingEventId ] = useState( null );
 
-	const saveTimerRef = useRef( null );
 	const hydratedRef = useRef( false );
 	const skipAutoSaveRef = useRef( false );
 
@@ -241,13 +266,21 @@ const App = () => {
 								: [ settings.cron_time || '00:00' ];
 						setCronTimes( nextCronTimes.map( sanitizeTimeInput ) );
 
-						if (
-							Array.isArray( settings.post_types ) &&
-							! arraysMatch( settings.post_types, selectedTypes )
-						) {
-							setSelectedTypes( settings.post_types );
-						}
+					if (
+						Array.isArray( settings.post_types ) &&
+						! arraysMatch( settings.post_types, selectedTypes )
+					) {
+						setSelectedTypes( settings.post_types );
 					}
+
+					if ( Array.isArray( response.cron_events ) ) {
+						setCronEvents( response.cron_events );
+					}
+
+					if ( Array.isArray( response.cron_history ) ) {
+						setCronHistory( response.cron_history );
+					}
+				}
 
 					if ( showFeedback ) {
 						showNotice( __( 'Automation settings saved.', 'wpmudev-plugin-test' ) );
@@ -288,20 +321,31 @@ const App = () => {
 					setLastRun( status.last_run || null );
 					setAvailableTypes( status.postTypes || [] );
 
-					if ( status.settings ) {
+				if ( Array.isArray( status.cron_events ) ) {
+					setCronEvents( status.cron_events );
+				}
+
+				if ( Array.isArray( status.cron_history ) ) {
+					setCronHistory( status.cron_history );
+				}
+
+				if ( status.settings ) {
+					const latestCronTimes =
+						Array.isArray( status.settings.cron_times ) && status.settings.cron_times.length
+							? status.settings.cron_times
+							: [ status.settings.cron_time ?? '00:00' ];
+
+					if ( ! hasPendingSettings ) {
 						skipAutoSaveRef.current = true;
 						setCronEnabled( status.settings.cron_enabled ?? true );
-						const latestCronTimes =
-							Array.isArray( status.settings.cron_times ) && status.settings.cron_times.length
-								? status.settings.cron_times
-								: [ status.settings.cron_time ?? '00:00' ];
 						setCronTimes( latestCronTimes.map( sanitizeTimeInput ) );
+					}
 
-						if ( ! silent && Array.isArray( status.settings.post_types ) ) {
-							setSelectedTypes( status.settings.post_types );
-						}
+					if ( ! silent && Array.isArray( status.settings.post_types ) ) {
+						setSelectedTypes( status.settings.post_types );
 					}
 				}
+			}
 			} catch ( error ) {
 				if ( ! silent ) {
 					showNotice( error?.message || __( 'Unable to fetch status.', 'wpmudev-plugin-test' ), 'error' );
@@ -312,7 +356,7 @@ const App = () => {
 				}
 			}
 		},
-		[ showNotice ]
+		[ showNotice, hasPendingSettings ]
 	);
 
 	useEffect( () => {
@@ -332,41 +376,23 @@ const App = () => {
 		}
 	}, [ jobActive, fetchStatus ] );
 
-	useEffect( () => {
-		if ( ! config.endpoints?.settings ) {
-			return;
-		}
+useEffect( () => {
+	if ( ! config.endpoints?.settings ) {
+		return;
+	}
 
-		if ( skipAutoSaveRef.current ) {
-			skipAutoSaveRef.current = false;
-			return;
-		}
+	if ( skipAutoSaveRef.current ) {
+		skipAutoSaveRef.current = false;
+		return;
+	}
 
-		if ( ! hydratedRef.current ) {
-			hydratedRef.current = true;
-			return;
-		}
+	if ( ! hydratedRef.current ) {
+		hydratedRef.current = true;
+		return;
+	}
 
-		setHasPendingSettings( true );
-
-		if ( saveTimerRef.current ) {
-			clearTimeout( saveTimerRef.current );
-		}
-
-		saveTimerRef.current = setTimeout( () => {
-			persistSettings().finally( () => {
-				saveTimerRef.current = null;
-			} );
-		}, 800 );
-	}, [ selectedTypes, cronEnabled, cronTimes, persistSettings ] );
-
-	useEffect( () => {
-		return () => {
-			if ( saveTimerRef.current ) {
-				clearTimeout( saveTimerRef.current );
-			}
-		};
-	}, [] );
+	setHasPendingSettings( true );
+}, [ cronEnabled, cronTimes, config.endpoints ] );
 
 	useEffect( () => {
 		if ( ! availableTypes.length ) {
@@ -396,77 +422,123 @@ const App = () => {
 		} );
 	}, [ availableTypes ] );
 
-	const togglePostType = ( slug ) => {
-		setSelectedTypes( ( current ) => {
-			if ( current.includes( slug ) ) {
-				return current.filter( ( item ) => item !== slug );
-			}
-			return [ ...current, slug ];
-		} );
-	};
+const togglePostType = ( slug ) => {
+	setSelectedTypes( ( current ) => {
+		if ( current.includes( slug ) ) {
+			return current.filter( ( item ) => item !== slug );
+		}
+		return [ ...current, slug ];
+	} );
+};
 
-	const handleCardToggle = ( slug ) => {
-		if ( jobActive ) {
-			return;
+const handleCardToggle = ( slug ) => {
+	if ( jobActive ) {
+		return;
+	}
+
+	togglePostType( slug );
+};
+
+const handleCronEnabledChange = ( value ) => {
+	setCronEnabled( value );
+	setHasPendingSettings( true );
+};
+
+const handleCronTimeChange = ( index, value ) => {
+	if ( ! cronEnabled ) {
+		return;
+	}
+
+	setCronTimes( ( current ) => {
+		const next = [ ...current ];
+		next[ index ] = sanitizeTimeInput( value || '00:00' );
+		return next;
+	} );
+
+	setHasPendingSettings( true );
+};
+
+const addCronTimeRow = () => {
+	if ( ! cronEnabled || cronTimes.length >= MAX_CRON_SLOTS ) {
+		return;
+	}
+
+	setCronTimes( ( current ) => [ ...current, getNextSuggestedTime( current ) ] );
+	setHasPendingSettings( true );
+};
+
+const removeCronTimeRow = ( index ) => {
+	setCronTimes( ( current ) => {
+		if ( current.length === 1 ) {
+			return current;
 		}
 
-		togglePostType( slug );
-	};
+		return current.filter( ( _, i ) => i !== index );
+	} );
 
-	const handleCronTimeChange = ( index, value ) => {
-		if ( ! cronEnabled ) {
-			return;
-		}
+	setHasPendingSettings( true );
+};
 
+const handleMultiRunToggle = ( value ) => {
+	if ( ! cronEnabled ) {
+		return;
+	}
+
+		if ( value ) {
 		setCronTimes( ( current ) => {
-			const next = [ ...current ];
-			next[ index ] = sanitizeTimeInput( value || '00:00' );
-			return next;
-		} );
-	};
-
-	const addCronTimeRow = () => {
-		if ( ! cronEnabled || cronTimes.length >= MAX_CRON_SLOTS ) {
-			return;
-		}
-
-		setCronTimes( ( current ) => [ ...current, getNextSuggestedTime( current ) ] );
-	};
-
-	const removeCronTimeRow = ( index ) => {
-		setCronTimes( ( current ) => {
-			if ( current.length === 1 ) {
+			if ( current.length > 1 ) {
 				return current;
 			}
 
-			return current.filter( ( _, i ) => i !== index );
+			return [ current[0], getNextSuggestedTime( current ) ];
 		} );
-	};
+		setHasPendingSettings( true );
 
-	const handleMultiRunToggle = ( value ) => {
-		if ( ! cronEnabled ) {
+		return;
+	}
+
+	setCronTimes( ( current ) => ( current.length ? [ current[0] ] : [ '00:00' ] ) );
+	setHasPendingSettings( true );
+};
+
+	const handleRemoveCronEvent = useCallback( async ( timestamp, slot = '' ) => {
+		if ( ! config.endpoints?.delete ) {
+			showNotice( __( 'Cron endpoint unavailable.', 'wpmudev-plugin-test' ), 'error' );
 			return;
 		}
 
-		if ( value ) {
-			setCronTimes( ( current ) => {
-				if ( current.length > 1 ) {
-					return current;
-				}
+		const id = `${ timestamp }::${ slot || '' }`;
+		setRemovingEventId( id );
 
-				return [ current[0], getNextSuggestedTime( current ) ];
+		try {
+			const query = new URLSearchParams();
+			query.append( 'timestamp', String( timestamp ) );
+			if ( slot ) {
+				query.append( 'slot', slot );
+			}
+
+			const response = await apiFetch( {
+				path: `/${ config.endpoints.delete }?${ query.toString() }`,
+				method: 'DELETE',
 			} );
 
-			return;
-		}
+			if ( response?.success ) {
+				setCronEvents( response.events || [] );
+				showNotice( __( 'Scheduled run removed.', 'wpmudev-plugin-test' ) );
+				return;
+			}
 
-		setCronTimes( ( current ) => ( current.length ? [ current[0] ] : [ '00:00' ] ) );
-	};
+			throw new Error( response?.message || __( 'Unable to remove the scheduled run.', 'wpmudev-plugin-test' ) );
+		} catch ( error ) {
+			showNotice( error?.message || __( 'Unable to remove the scheduled run.', 'wpmudev-plugin-test' ), 'error' );
+		} finally {
+			setRemovingEventId( null );
+		}
+	}, [ config.endpoints, showNotice ] );
 
 	const handleManualSave = async () => {
-		if ( saveTimerRef.current ) {
-			clearTimeout( saveTimerRef.current );
-			saveTimerRef.current = null;
+		if ( isSavingSettings ) {
+			return;
 		}
 
 		await persistSettings( { showFeedback: true } );
@@ -549,7 +621,11 @@ const App = () => {
 			return __( 'Not available', 'wpmudev-plugin-test' );
 		}
 
-		return new Date( timestamp * 1000 ).toLocaleString();
+		const date = new Date( timestamp * 1000 );
+		const datePart = date.toLocaleDateString();
+		const timePart = date.toLocaleTimeString( undefined, { hour: 'numeric', minute: '2-digit', second: '2-digit', hour12: true } );
+
+		return datePart + ', ' + timePart;
 	};
 
 	const lastRunDisplay = lastRun?.completed_at
@@ -569,8 +645,22 @@ const App = () => {
 		? sprintf( __( 'Runs daily at %s (site time).', 'wpmudev-plugin-test' ), cronSummaryTimes )
 		: __( 'Automation paused until you enable it.', 'wpmudev-plugin-test' );
 	const saveIndicatorText = hasPendingSettings
-		? __( 'Saving preferences...', 'wpmudev-plugin-test' )
-		: __( 'Preferences synced to server.', 'wpmudev-plugin-test' );
+		? __( 'You have unsaved automation changes.', 'wpmudev-plugin-test' )
+		: __( 'Automation preferences saved.', 'wpmudev-plugin-test' );
+	const getHistoryBadgeTone = ( status = 'pending' ) => {
+		switch ( status ) {
+			case 'completed':
+				return 'success';
+			case 'cancelled':
+			case 'failed':
+			case 'reset':
+				return 'warning';
+			case 'running':
+			case 'pending':
+			default:
+				return 'accent';
+		}
+	};
 
 	return (
 		<div className="shadcn-admin posts-admin">
@@ -755,12 +845,12 @@ const App = () => {
 				</CardHeader>
 				<CardContent className="posts-automation">
 					<div className="posts-automation__switches">
-						<Switch
-							label={ __( 'Enable daily WP-Cron task', 'wpmudev-plugin-test' ) }
-							description={ __( 'Keeps the maintenance scan running once per day without manual input.', 'wpmudev-plugin-test' ) }
-							checked={ cronEnabled }
-							onChange={ ( value ) => setCronEnabled( value ) }
-						/>
+					<Switch
+						label={ __( 'Enable daily WP-Cron task', 'wpmudev-plugin-test' ) }
+						description={ __( 'Keeps the maintenance scan running once per day without manual input.', 'wpmudev-plugin-test' ) }
+						checked={ cronEnabled }
+						onChange={ handleCronEnabledChange }
+					/>
 						<Switch
 							label={ __( 'Run multiple times per day', 'wpmudev-plugin-test' ) }
 							description={ __( 'Schedule up to six daily executions at specific times.', 'wpmudev-plugin-test' ) }
@@ -819,23 +909,107 @@ const App = () => {
 					) }
 					<p className="posts-automation__note">
 						{ cronEnabled
-							? __( 'Each time listed above is queued automatically with WP-Cron.', 'wpmudev-plugin-test' )
+							? __( 'Adjust the times above and click “Save Automation Settings” to update WP-Cron.', 'wpmudev-plugin-test' )
 							: __( 'Daily automation is paused until you enable it again.', 'wpmudev-plugin-test' ) }
 					</p>
+					<div className="posts-save-actions posts-card__footer">
+						<p className={ `posts-save-indicator${ hasPendingSettings ? ' is-dirty' : '' }` }>
+							{ saveIndicatorText }
+						</p>
+						<Button
+							variant="secondary"
+							onClick={ handleManualSave }
+							isLoading={ isSavingSettings }
+							disabled={ isSavingSettings || ! hasPendingSettings || ! config.endpoints?.settings }
+						>
+							{ __( 'Save Automation Settings', 'wpmudev-plugin-test' ) }
+						</Button>
+					</div>
+					<div className="posts-cron-events">
+						<h4>{ __( 'Scheduled WP-Cron Runs', 'wpmudev-plugin-test' ) }</h4>
+						{ cronEvents.length ? (
+							<ul className="posts-cron-events__list">
+								{ cronEvents.map( ( event ) => (
+									<li key={ `${ event.timestamp }-${ event.slot || 'default' }` } className="posts-cron-events__item">
+										<div className="posts-cron-events__datetime">
+											<strong>{ event.local }</strong>
+											{ event.slot && (
+												<span className="posts-cron-events__slot">
+													{ sprintf( __( 'Slot: %s', 'wpmudev-plugin-test' ), event.slot ) }
+												</span>
+											) }
+										</div>
+										<div className="posts-cron-events__meta">
+											<span>{ event.relative }</span>
+											<Button
+												variant="ghost"
+												size="sm"
+												onClick={ () => handleRemoveCronEvent( event.timestamp, event.slot ) }
+												isLoading={ removingEventId === `${ event.timestamp }::${ event.slot || '' }` }
+												disabled={ removingEventId === `${ event.timestamp }::${ event.slot || '' }` }
+											>
+												{ __( 'Remove run', 'wpmudev-plugin-test' ) }
+											</Button>
+										</div>
+									</li>
+								) ) }
+							</ul>
+						) : (
+							<p className="posts-cron-events__empty">
+								{ __( 'No upcoming maintenance events scheduled yet.', 'wpmudev-plugin-test' ) }
+							</p>
+						) }
+						<p className="posts-cron-events__timezone">
+							{ config.timezoneAbbr
+								? sprintf( __( 'Site timezone: %1$s (%2$s)', 'wpmudev-plugin-test' ), config.timezone || 'UTC', config.timezoneAbbr )
+								: sprintf( __( 'Site timezone: %s', 'wpmudev-plugin-test' ), config.timezone || 'UTC' ) }
+						</p>
+					</div>
+					<div className="posts-cron-history">
+						<h4>{ __( 'Recent WP-Cron Runs', 'wpmudev-plugin-test' ) }</h4>
+						{ cronHistory.length ? (
+							<ul className="posts-cron-history__list">
+								{ cronHistory.map( ( entry ) => (
+									<li key={ entry.run_id } className="posts-cron-history__item">
+										<div className="posts-cron-history__header">
+											<Badge tone={ getHistoryBadgeTone( entry.status ) }>{ entry.status_label }</Badge>
+											{ entry.relative && <span className="posts-cron-history__relative">{ entry.relative }</span> }
+										</div>
+										<div className="posts-cron-history__details">
+											{ entry.slot && (
+												<span className="posts-cron-history__detail">
+													{ sprintf( __( 'Slot: %s', 'wpmudev-plugin-test' ), entry.slot ) }
+												</span>
+											) }
+											{ entry.scheduled_local && (
+												<span className="posts-cron-history__detail">
+													{ sprintf( __( 'Scheduled: %s', 'wpmudev-plugin-test' ), entry.scheduled_local ) }
+												</span>
+											) }
+											{ entry.triggered_local && (
+												<span className="posts-cron-history__detail">
+													{ sprintf( __( 'Triggered: %s', 'wpmudev-plugin-test' ), entry.triggered_local ) }
+												</span>
+											) }
+											{ entry.completed_local && (
+												<span className="posts-cron-history__detail">
+													{ sprintf( __( 'Completed: %s', 'wpmudev-plugin-test' ), entry.completed_local ) }
+												</span>
+											) }
+											<span className="posts-cron-history__detail">
+												{ sprintf( __( 'Processed: %d items', 'wpmudev-plugin-test' ), entry.processed || 0 ) }
+											</span>
+										</div>
+									</li>
+								) ) }
+							</ul>
+						) : (
+							<p className="posts-cron-history__empty">
+								{ __( 'No cron runs recorded yet.', 'wpmudev-plugin-test' ) }
+							</p>
+						) }
+					</div>
 				</CardContent>
-				<CardFooter className="posts-card__footer">
-					<p className={ `posts-save-indicator${ hasPendingSettings ? ' is-dirty' : '' }` }>
-						{ saveIndicatorText }
-					</p>
-					<Button
-						variant="secondary"
-						onClick={ handleManualSave }
-						isLoading={ isSavingSettings }
-						disabled={ isSavingSettings || ! config.endpoints?.settings }
-					>
-						{ __( 'Save Automation Settings', 'wpmudev-plugin-test' ) }
-					</Button>
-				</CardFooter>
 			</Card>
 
 			<Card className="posts-card posts-card--cli" elevated>

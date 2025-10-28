@@ -89,8 +89,11 @@ class Posts_Maintenance extends Base {
 					'cancel'   => 'wpmudev/v1/posts-maintenance/cancel',
 					'settings' => 'wpmudev/v1/posts-maintenance/settings',
 					'reset'    => 'wpmudev/v1/posts-maintenance/reset',
+					'delete'   => 'wpmudev/v1/posts-maintenance/cron/delete',
 				),
 				'status'     => $status,
+				'timezone'   => wp_timezone_string() ? wp_timezone_string() : 'UTC',
+				'timezoneAbbr' => wp_date( 'T' ),
 			),
 		);
 	}
