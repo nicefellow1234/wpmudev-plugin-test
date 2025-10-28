@@ -1013,6 +1013,64 @@ const handleDragLeave = ( event ) => {
     };
 
 
+	const renderDriveActions = () => {
+		const heading = isAuthenticated
+			? __( 'Manage Google Drive Connection', 'wpmudev-plugin-test' )
+			: __( 'Connect to Google Drive', 'wpmudev-plugin-test' );
+		const description = isAuthenticated
+			? __(
+				'Your Google account is connected. Revoke access to disconnect this site or re-authenticate if needed.',
+				'wpmudev-plugin-test'
+			)
+			: __(
+				'Authenticate with your Google account to unlock uploads, folder creation, and live browsing of Drive files.',
+				'wpmudev-plugin-test'
+			);
+		const authLabel = authInProgress
+			? __( 'Redirecting…', 'wpmudev-plugin-test' )
+			: (
+				isAuthenticated
+					? __( 'Re-authenticate with Google Drive', 'wpmudev-plugin-test' )
+					: __( 'Authenticate with Google Drive', 'wpmudev-plugin-test' )
+			);
+
+		return (
+			<Card className="drive-card drive-card--auth" elevated>
+				<CardHeader>
+					<CardTitle>{ heading }</CardTitle>
+					<CardDescription>{ description }</CardDescription>
+				</CardHeader>
+				<CardContent className="drive-card__content drive-card__content--actions">
+					<div className="drive-card__actions">
+						<Button
+							variant="primary"
+							onClick={ handleAuth }
+							isLoading={ authInProgress }
+							disabled={ authInProgress || revokingAuth }
+						>
+							{ authLabel }
+						</Button>
+						{ isAuthenticated && (
+							<Button
+								variant="destructive"
+								onClick={ handleRevokeAuth }
+								isLoading={ revokingAuth }
+								disabled={ revokingAuth || authInProgress }
+							>
+								{ revokingAuth
+									? __( 'Revoking…', 'wpmudev-plugin-test' )
+									: __( 'Revoke Google Drive Access', 'wpmudev-plugin-test' ) }
+							</Button>
+						) }
+					</div>
+					<p className="drive-card__hint">
+						{ __( 'You’ll be redirected to Google for OAuth approval. Upon success, the page refreshes automatically.', 'wpmudev-plugin-test' ) }
+					</p>
+				</CardContent>
+			</Card>
+		);
+	};
+
 	const renderCredentialsPanel = () => {
 		const scopeChips = (
 			<div className="drive-card__scopes">
@@ -1762,60 +1820,3 @@ if ( mountNode ) {
         render( App, mountNode );
     }
 }
-	const renderDriveActions = () => {
-		const heading = isAuthenticated
-			? __( "Manage Google Drive Connection", "wpmudev-plugin-test" )
-			: __( "Connect to Google Drive", "wpmudev-plugin-test" );
-		const description = isAuthenticated
-			? __(
-					"Your Google account is connected. Revoke access to disconnect this site or re-authenticate if needed.",
-					"wpmudev-plugin-test"
-			  )
-			: __(
-					"Authenticate with your Google account to unlock uploads, folder creation, and live browsing of Drive files.",
-					"wpmudev-plugin-test"
-			  );
-		const authLabel = authInProgress
-			? __( "Redirecting…", "wpmudev-plugin-test" )
-			: (
-				isAuthenticated
-					? __( "Re-authenticate with Google Drive", "wpmudev-plugin-test" )
-					: __( "Authenticate with Google Drive", "wpmudev-plugin-test" )
-			);
-
-		return (
-			<Card className="drive-card drive-card--auth" elevated>
-				<CardHeader>
-					<CardTitle>{ heading }</CardTitle>
-					<CardDescription>{ description }</CardDescription>
-				</CardHeader>
-				<CardContent className="drive-card__content drive-card__content--actions">
-					<div className="drive-card__actions">
-						<Button
-							variant="primary"
-							onClick={ handleAuth }
-							isLoading={ authInProgress }
-							disabled={ authInProgress || revokingAuth }
-						>
-							{ authLabel }
-						</Button>
-						{ isAuthenticated && (
-							<Button
-								variant="destructive"
-								onClick={ handleRevokeAuth }
-								isLoading={ revokingAuth }
-								disabled={ revokingAuth || authInProgress }
-							>
-								{ revokingAuth
-									? __( "Revoking…", "wpmudev-plugin-test" )
-									: __( "Revoke Google Drive Access", "wpmudev-plugin-test" ) }
-							</Button>
-						) }
-					</div>
-					<p className="drive-card__hint">
-						{ __( "You’ll be redirected to Google for OAuth approval. Upon success, the page refreshes automatically.", "wpmudev-plugin-test" ) }
-					</p>
-				</CardContent>
-			</Card>
-		);
-	};

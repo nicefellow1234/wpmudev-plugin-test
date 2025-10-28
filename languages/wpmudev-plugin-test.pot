@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2025-10-27T21:39:22+00:00\n"
+"POT-Creation-Date: 2025-10-28T03:04:34+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 
@@ -62,7 +62,7 @@ msgid "Google Drive Settings"
 msgstr ""
 
 #: app/admin-pages/class-dashboard.php:138
-#: assets/js/drivetestpage.min.js:2590
+#: assets/js/drivetestpage.min.js:2591
 msgid "Connected"
 msgstr ""
 
@@ -134,12 +134,12 @@ msgstr ""
 #: app/admin-pages/class-dashboard.php:219
 #: app/admin-pages/class-googledrive-manage.php:61
 #: app/admin-pages/class-googledrive-manage.php:85
-#: assets/js/drivetestpage.min.js:2562
+#: assets/js/drivetestpage.min.js:2563
 msgid "Manage Google Drive"
 msgstr ""
 
 #: app/admin-pages/class-dashboard.php:221
-#: assets/js/drivetestpage.min.js:2611
+#: assets/js/drivetestpage.min.js:2612
 msgid "Available"
 msgstr ""
 
@@ -168,7 +168,7 @@ msgid "You do not have permission to manage this setting."
 msgstr ""
 
 #: app/admin-pages/class-googledrive-settings.php:76
-#: assets/js/drivetestpage.min.js:2563
+#: assets/js/drivetestpage.min.js:2564
 msgid "Google Drive Test"
 msgstr ""
 
@@ -314,7 +314,7 @@ msgstr ""
 
 #: assets/js/drivetestpage.min.js:1025
 #: assets/js/drivetestpage.min.js:1331
-#: assets/js/drivetestpage.min.js:2286
+#: assets/js/drivetestpage.min.js:2287
 msgid "My Drive"
 msgstr ""
 
@@ -351,7 +351,7 @@ msgid "Stored"
 msgstr ""
 
 #: assets/js/drivetestpage.min.js:1080
-#: assets/js/drivetestpage.min.js:2611
+#: assets/js/drivetestpage.min.js:2612
 msgid "Missing"
 msgstr ""
 
@@ -364,12 +364,12 @@ msgid "Add your OAuth client ID and secret to continue."
 msgstr ""
 
 #: assets/js/drivetestpage.min.js:1088
-#: assets/js/drivetestpage.min.js:2606
+#: assets/js/drivetestpage.min.js:2607
 msgid "Authentication"
 msgstr ""
 
 #: assets/js/drivetestpage.min.js:1089
-#: assets/js/drivetestpage.min.js:2607
+#: assets/js/drivetestpage.min.js:2608
 msgid "Active"
 msgstr ""
 
@@ -517,12 +517,12 @@ msgid "File deleted."
 msgstr ""
 
 #: assets/js/drivetestpage.min.js:1845
-#: assets/js/drivetestpage.min.js:2429
+#: assets/js/drivetestpage.min.js:2430
 msgid "Folder"
 msgstr ""
 
 #: assets/js/drivetestpage.min.js:1848
-#: assets/js/drivetestpage.min.js:2429
+#: assets/js/drivetestpage.min.js:2430
 msgid "File"
 msgstr ""
 
@@ -535,357 +535,357 @@ msgstr ""
 msgid "FILE"
 msgstr ""
 
-#: assets/js/drivetestpage.min.js:1906
+#: assets/js/drivetestpage.min.js:1907
 msgid "Manage Google Drive Connection"
 msgstr ""
 
-#: assets/js/drivetestpage.min.js:1907
+#: assets/js/drivetestpage.min.js:1908
 msgid "Connect to Google Drive"
 msgstr ""
 
-#: assets/js/drivetestpage.min.js:1909
+#: assets/js/drivetestpage.min.js:1910
 msgid "Your Google account is connected. Revoke access to disconnect this site or re-authenticate if needed."
 msgstr ""
 
-#: assets/js/drivetestpage.min.js:1913
+#: assets/js/drivetestpage.min.js:1914
 msgid "Authenticate with your Google account to unlock uploads, folder creation, and live browsing of Drive files."
 msgstr ""
 
-#: assets/js/drivetestpage.min.js:1918
+#: assets/js/drivetestpage.min.js:1919
 msgid "Redirecting…"
 msgstr ""
 
-#: assets/js/drivetestpage.min.js:1921
+#: assets/js/drivetestpage.min.js:1922
 msgid "Re-authenticate with Google Drive"
 msgstr ""
 
-#: assets/js/drivetestpage.min.js:1922
+#: assets/js/drivetestpage.min.js:1923
 msgid "Authenticate with Google Drive"
 msgstr ""
 
-#: assets/js/drivetestpage.min.js:1949
+#: assets/js/drivetestpage.min.js:1950
 msgid "Revoking…"
 msgstr ""
 
-#: assets/js/drivetestpage.min.js:1950
+#: assets/js/drivetestpage.min.js:1951
 msgid "Revoke Google Drive Access"
 msgstr ""
 
-#: assets/js/drivetestpage.min.js:1955
+#: assets/js/drivetestpage.min.js:1956
 msgid "You’ll be redirected to Google for OAuth approval. Upon success, the page refreshes automatically."
 msgstr ""
 
-#: assets/js/drivetestpage.min.js:1974
+#: assets/js/drivetestpage.min.js:1975
 msgid "Generate OAuth credentials inside the <a>Google Cloud Console</a>, then store them here to enable Drive tools."
 msgstr ""
 
-#: assets/js/drivetestpage.min.js:1990
+#: assets/js/drivetestpage.min.js:1991
 msgid "Copy the OAuth Client ID from <a>Google Cloud Console</a> after enabling the Drive API."
 msgstr ""
 
-#: assets/js/drivetestpage.min.js:2006
+#: assets/js/drivetestpage.min.js:2007
 msgid "Paste the matching Client Secret from your Google OAuth credentials screen."
 msgstr ""
 
-#: assets/js/drivetestpage.min.js:2025
+#: assets/js/drivetestpage.min.js:2026
 msgid "Google API Credentials"
 msgstr ""
 
-#: assets/js/drivetestpage.min.js:2035
+#: assets/js/drivetestpage.min.js:2036
 msgid "Collapse form"
 msgstr ""
 
-#: assets/js/drivetestpage.min.js:2036
+#: assets/js/drivetestpage.min.js:2037
 msgid "Edit credentials"
 msgstr ""
 
-#: assets/js/drivetestpage.min.js:2045
+#: assets/js/drivetestpage.min.js:2046
 msgid "Client ID"
 msgstr ""
 
-#: assets/js/drivetestpage.min.js:2058
+#: assets/js/drivetestpage.min.js:2059
 msgid "Client Secret"
 msgstr ""
 
-#: assets/js/drivetestpage.min.js:2071
-#: assets/js/drivetestpage.min.js:2134
+#: assets/js/drivetestpage.min.js:2072
+#: assets/js/drivetestpage.min.js:2135
 msgid "Redirect URI"
 msgstr ""
 
-#: assets/js/drivetestpage.min.js:2073
+#: assets/js/drivetestpage.min.js:2074
 msgid "Add this URL to the list of authorized redirect URIs in Google Cloud Console."
-msgstr ""
-
-#: assets/js/drivetestpage.min.js:2093
-#: assets/js/drivetestpage.min.js:2144
-msgid "Copied"
 msgstr ""
 
 #: assets/js/drivetestpage.min.js:2094
 #: assets/js/drivetestpage.min.js:2145
+msgid "Copied"
+msgstr ""
+
+#: assets/js/drivetestpage.min.js:2095
+#: assets/js/drivetestpage.min.js:2146
 msgid "Copy URI"
 msgstr ""
 
-#: assets/js/drivetestpage.min.js:2099
-#: assets/js/drivetestpage.min.js:2151
+#: assets/js/drivetestpage.min.js:2100
+#: assets/js/drivetestpage.min.js:2152
 msgid "Redirect URI copied to clipboard."
 msgstr ""
 
-#: assets/js/drivetestpage.min.js:2107
+#: assets/js/drivetestpage.min.js:2108
 msgid "OAuth scopes"
 msgstr ""
 
-#: assets/js/drivetestpage.min.js:2118
+#: assets/js/drivetestpage.min.js:2119
 msgid "Saving…"
 msgstr ""
 
-#: assets/js/drivetestpage.min.js:2119
+#: assets/js/drivetestpage.min.js:2120
 msgid "Save Credentials"
 msgstr ""
 
-#: assets/js/drivetestpage.min.js:2126
+#: assets/js/drivetestpage.min.js:2127
 msgid "Credentials stored securely. Re-open the form above whenever you rotate keys or need to verify them."
 msgstr ""
 
-#: assets/js/drivetestpage.min.js:2165
-#: assets/js/drivetestpage.min.js:2253
+#: assets/js/drivetestpage.min.js:2166
+#: assets/js/drivetestpage.min.js:2254
 msgid "Upload to Drive"
 msgstr ""
 
-#: assets/js/drivetestpage.min.js:2167
+#: assets/js/drivetestpage.min.js:2168
 msgid "Drag & drop a file or browse your device. Files land in the folder you’re currently viewing."
 msgstr ""
 
-#: assets/js/drivetestpage.min.js:2190
+#: assets/js/drivetestpage.min.js:2191
 msgid "Drop files or browse"
 msgstr ""
 
-#: assets/js/drivetestpage.min.js:2193
+#: assets/js/drivetestpage.min.js:2194
 msgid "Accepted formats match your Drive allowlist. Upload limit:"
 msgstr ""
 
-#: assets/js/drivetestpage.min.js:2196
+#: assets/js/drivetestpage.min.js:2197
 msgid "Choose a file"
 msgstr ""
 
-#: assets/js/drivetestpage.min.js:2217
+#: assets/js/drivetestpage.min.js:2218
 #, js-format
 msgid "Size: %s"
 msgstr ""
 
-#: assets/js/drivetestpage.min.js:2223
+#: assets/js/drivetestpage.min.js:2224
 msgid "Clear selection"
 msgstr ""
 
-#: assets/js/drivetestpage.min.js:2230
+#: assets/js/drivetestpage.min.js:2231
 #, js-format
 msgid "Uploading… %d%%"
 msgstr ""
 
-#: assets/js/drivetestpage.min.js:2237
+#: assets/js/drivetestpage.min.js:2238
 msgid "Destination folder"
 msgstr ""
 
-#: assets/js/drivetestpage.min.js:2252
+#: assets/js/drivetestpage.min.js:2253
 msgid "Uploading…"
 msgstr ""
 
-#: assets/js/drivetestpage.min.js:2262
+#: assets/js/drivetestpage.min.js:2263
 msgid "Create New Folder"
 msgstr ""
 
-#: assets/js/drivetestpage.min.js:2264
+#: assets/js/drivetestpage.min.js:2265
 msgid "Spin up a folder inside your active Drive location and instantly refresh the listing below."
 msgstr ""
 
-#: assets/js/drivetestpage.min.js:2269
+#: assets/js/drivetestpage.min.js:2270
 msgid "Folder name"
 msgstr ""
 
-#: assets/js/drivetestpage.min.js:2276
+#: assets/js/drivetestpage.min.js:2277
 msgid "Marketing uploads"
 msgstr ""
 
-#: assets/js/drivetestpage.min.js:2283
+#: assets/js/drivetestpage.min.js:2284
 msgid "Parent folder"
 msgstr ""
 
-#: assets/js/drivetestpage.min.js:2296
+#: assets/js/drivetestpage.min.js:2297
 msgid "Creating…"
 msgstr ""
 
-#: assets/js/drivetestpage.min.js:2297
+#: assets/js/drivetestpage.min.js:2298
 msgid "Create Folder"
 msgstr ""
 
-#: assets/js/drivetestpage.min.js:2310
+#: assets/js/drivetestpage.min.js:2311
 msgid "Google Drive breadcrumb"
 msgstr ""
 
-#: assets/js/drivetestpage.min.js:2333
+#: assets/js/drivetestpage.min.js:2334
 msgid "Up One Level"
 msgstr ""
 
-#: assets/js/drivetestpage.min.js:2337
+#: assets/js/drivetestpage.min.js:2338
 msgid "Sort by"
 msgstr ""
 
-#: assets/js/drivetestpage.min.js:2344
+#: assets/js/drivetestpage.min.js:2345
 msgid "Latest first"
 msgstr ""
 
-#: assets/js/drivetestpage.min.js:2345
+#: assets/js/drivetestpage.min.js:2346
 msgid "Oldest first"
 msgstr ""
 
-#: assets/js/drivetestpage.min.js:2356
+#: assets/js/drivetestpage.min.js:2357
 msgid "Search this folder"
 msgstr ""
 
-#: assets/js/drivetestpage.min.js:2357
+#: assets/js/drivetestpage.min.js:2358
 msgid "Search Drive"
 msgstr ""
 
-#: assets/js/drivetestpage.min.js:2365
+#: assets/js/drivetestpage.min.js:2366
 msgid "Search"
 msgstr ""
 
-#: assets/js/drivetestpage.min.js:2380
+#: assets/js/drivetestpage.min.js:2381
 msgid "Clear"
 msgstr ""
 
-#: assets/js/drivetestpage.min.js:2390
+#: assets/js/drivetestpage.min.js:2391
 msgid "Loading files…"
 msgstr ""
 
-#: assets/js/drivetestpage.min.js:2397
+#: assets/js/drivetestpage.min.js:2398
 msgid "No Drive files yet"
 msgstr ""
 
-#: assets/js/drivetestpage.min.js:2400
+#: assets/js/drivetestpage.min.js:2401
 msgid "Upload a file or refresh the list to view items from Google Drive."
 msgstr ""
 
-#: assets/js/drivetestpage.min.js:2421
+#: assets/js/drivetestpage.min.js:2422
 msgid "Unknown date"
 msgstr ""
 
-#: assets/js/drivetestpage.min.js:2435
+#: assets/js/drivetestpage.min.js:2436
 msgid "File actions"
 msgstr ""
 
-#: assets/js/drivetestpage.min.js:2459
+#: assets/js/drivetestpage.min.js:2460
 msgid "Open Folder"
 msgstr ""
 
-#: assets/js/drivetestpage.min.js:2470
+#: assets/js/drivetestpage.min.js:2471
 msgid "Download"
 msgstr ""
 
-#: assets/js/drivetestpage.min.js:2482
+#: assets/js/drivetestpage.min.js:2483
 msgid "Open in Drive"
 msgstr ""
 
-#: assets/js/drivetestpage.min.js:2497
+#: assets/js/drivetestpage.min.js:2498
 msgid "Rename"
 msgstr ""
 
-#: assets/js/drivetestpage.min.js:2505
+#: assets/js/drivetestpage.min.js:2506
 msgid "Delete"
 msgstr ""
 
-#: assets/js/drivetestpage.min.js:2517
+#: assets/js/drivetestpage.min.js:2518
 msgid "Rename item"
 msgstr ""
 
-#: assets/js/drivetestpage.min.js:2526
+#: assets/js/drivetestpage.min.js:2527
 msgid "Save"
 msgstr ""
 
-#: assets/js/drivetestpage.min.js:2529
+#: assets/js/drivetestpage.min.js:2530
 msgid "Cancel"
 msgstr ""
 
-#: assets/js/drivetestpage.min.js:2551
+#: assets/js/drivetestpage.min.js:2552
 msgid "Load More Files"
 msgstr ""
 
-#: assets/js/drivetestpage.min.js:2565
+#: assets/js/drivetestpage.min.js:2566
 msgid "Upload files, browse folders, and manage Drive content directly from WordPress."
 msgstr ""
 
-#: assets/js/drivetestpage.min.js:2566
+#: assets/js/drivetestpage.min.js:2567
 msgid "Manage Google Drive credentials, authenticate, and test Drive file operations."
 msgstr ""
 
-#: assets/js/drivetestpage.min.js:2568
+#: assets/js/drivetestpage.min.js:2569
 msgid "Drive workspace"
 msgstr ""
 
-#: assets/js/drivetestpage.min.js:2569
+#: assets/js/drivetestpage.min.js:2570
 msgid "Drive integration"
 msgstr ""
 
-#: assets/js/drivetestpage.min.js:2574
+#: assets/js/drivetestpage.min.js:2575
 msgid "Something went wrong"
 msgstr ""
 
-#: assets/js/drivetestpage.min.js:2576
+#: assets/js/drivetestpage.min.js:2577
 #: assets/js/postsmaintenance.min.js:1552
 msgid "Heads up"
 msgstr ""
 
-#: assets/js/drivetestpage.min.js:2577
+#: assets/js/drivetestpage.min.js:2578
 msgid "Success"
 msgstr ""
 
-#: assets/js/drivetestpage.min.js:2590
+#: assets/js/drivetestpage.min.js:2591
 msgid "Needs setup"
 msgstr ""
 
-#: assets/js/drivetestpage.min.js:2600
+#: assets/js/drivetestpage.min.js:2601
 msgid "Connection overview"
 msgstr ""
 
-#: assets/js/drivetestpage.min.js:2601
+#: assets/js/drivetestpage.min.js:2602
 msgid "Quick stats to confirm your Drive handshake is healthy."
 msgstr ""
 
-#: assets/js/drivetestpage.min.js:2607
+#: assets/js/drivetestpage.min.js:2608
 #: assets/js/postsmaintenance.min.js:1040
 msgid "Pending"
 msgstr ""
 
-#: assets/js/drivetestpage.min.js:2610
+#: assets/js/drivetestpage.min.js:2611
 msgid "Stored credentials"
 msgstr ""
 
-#: assets/js/drivetestpage.min.js:2614
+#: assets/js/drivetestpage.min.js:2615
 msgid "Upload limit"
 msgstr ""
 
-#: assets/js/drivetestpage.min.js:2618
+#: assets/js/drivetestpage.min.js:2619
 msgid "Scopes requested"
 msgstr ""
 
-#: assets/js/drivetestpage.min.js:2634
+#: assets/js/drivetestpage.min.js:2635
 #: assets/js/postsmaintenance.min.js:1557
 msgid "Dismiss"
 msgstr ""
 
-#: assets/js/drivetestpage.min.js:2674
+#: assets/js/drivetestpage.min.js:2675
 msgid "Your Drive Files"
 msgstr ""
 
-#: assets/js/drivetestpage.min.js:2675
+#: assets/js/drivetestpage.min.js:2676
 msgid "Browse the live Drive listing. Search, sort, open in Drive, or download instantly."
 msgstr ""
 
-#: assets/js/drivetestpage.min.js:2683
+#: assets/js/drivetestpage.min.js:2684
 msgid "Refreshing…"
 msgstr ""
 
-#: assets/js/drivetestpage.min.js:2683
+#: assets/js/drivetestpage.min.js:2684
 msgid "Refresh list"
 msgstr ""
 
