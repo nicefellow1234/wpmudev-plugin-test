@@ -76,6 +76,7 @@ logs/
 *.bak
 *.orig
 *.rej
+.phpunit.result.cache
 
 # ------------------------------------------------------------
 # Optional: Keep build output if you commit production assets

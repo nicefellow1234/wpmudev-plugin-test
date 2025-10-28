@@ -19,6 +19,7 @@
 - [Google Drive Configuration](#google-drive-configuration)
 - [Development Workflow](#development-workflow)
   - [Composer](#composer)
+  - [PHPUnit / Tests](#phpunit--tests)
   - [Node / Build Tasks](#node--build-tasks)
   - [Release Checklist](#release-checklist)
 - [Project Structure](#project-structure)
@@ -144,6 +145,38 @@ composer install
 ```
 
 Run `composer install --no-dev` before packaging if you want a lean distributable without dev-only dependencies.
+
+### PHPUnit / Tests
+
+This repo ships with `setup-wp-phpunit.sh`, a convenience script that downloads WordPress core + the PHPUnit test suite into `/tmp`, provisions a scratch database, and runs the tests for you.
+
+```bash
+composer install
+./setup-wp-phpunit.sh
+```
+
+By default the script discovers the nearest `wp-config.php` and reuses its credentials. If those constants pull from environment variables (or you want to target a different database), you can override them:
+
+```bash
+./setup-wp-phpunit.sh \
+  --db-name=wordpress \
+  --db-user=root \
+  --db-password=secret \
+  --db-host=127.0.0.1:3306 \
+  --test-db-name=wordpress_phpunit
+```
+
+Available flags: `--db-name`, `--db-user`, `--db-password`, `--db-host`, `--db-port`, and `--test-db-name`. Passwords are optional; omit the flag if your database user has none. The script drops and recreates the test database on every run.
+
+Once the environment is seeded you can rerun the suite directly without rebuilding everything:
+
+```bash
+vendor/bin/phpunit --configuration phpunit.xml.dist --testdox
+# or target a single test class
+vendor/bin/phpunit tests/test-posts-maintenance.php
+```
+
+If you already have a global `phpunit` executable on your PATH, you can swap `vendor/bin/phpunit` for `phpunit`. The `--testdox` flag prints each test's description as it runs so you can immediately see what scenario passed or failed.
 
 ### Node / Build Tasks
 

@@ -2,6 +2,9 @@
 
 class TestAPIAuth extends WP_Test_REST_TestCase {
 
+	/**
+	 * @testdox Auth endpoint responds with a descriptive error instead of 404 when credentials are missing
+	 */
 	public function test_get_auth_url() {
 		$request  = new WP_REST_Request( 'GET', '/wpmudev/v1/auth/auth-url' );
 		$response = rest_get_server()->dispatch( $request );
